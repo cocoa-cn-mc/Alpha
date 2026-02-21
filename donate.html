@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>寄付のお願い</title>
+  <meta name="description" content="コミュニティ運営を支える寄付ページ。達成済み・未達成のキャンペーンを左右に分けて表示します。" />
+
+  <!-- favicon -->
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon.png">
+  <meta name="msapplication-TileColor" content="#2b8a3e">
+  <meta name="theme-color" content="#2b8a3e">
+
+  <style>
+    :root{
+      --accent:#16a34a;
+      --muted:#6b7280;
+      --bg:#f6f8fa;
+      --card:#fff;
+      --maxw:1200px;
+      --radius:10px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:"Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background:var(--bg);
+      color:#111;
+      -webkit-font-smoothing:antialiased;
+    }
+    header{
+      background:linear-gradient(180deg,#0b1220,#0f172a);
+      color:#fff;
+      padding:20px;
+      text-align:center;
+    }
+    header h1{margin:0;font-size:1.4rem}
+    header p{margin:6px 0 0;color:rgba(255,255,255,0.85)}
+
+    main{max-width:var(--maxw);margin:20px auto;padding:18px}
+
+    .intro, .split-area, .note-box{
+      background:var(--card);
+      border-radius:var(--radius);
+      padding:14px;
+      border:1px solid #eef2f6;
+    }
+
+    .intro h2{margin:0 0 8px 0}
+    .intro p{margin:0;color:var(--muted)}
+
+    /* split layout: left = 未達成 (wider), right = 達成 (narrower) */
+    .split-area{margin-top:14px}
+    .split-grid{
+      display:grid;
+      grid-template-columns: 2fr 1fr;
+      gap:16px;
+      align-items:start;
+      margin-top:12px;
+    }
+
+    .panel{
+      background:#fff;
+      border-radius:10px;
+      padding:12px;
+      border:1px solid #eef2f6;
+    }
+
+    .panel h3{margin:0 0 8px 0}
+    .totals{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+    .total-item{background:linear-gradient(180deg,#ffffff,#fbfffb);padding:8px;border-radius:8px;border:1px solid #eef2f6;min-width:160px}
+    .total-item .label{color:var(--muted);font-weight:700;font-size:0.9rem}
+    .total-item .value{font-weight:800;margin-top:6px}
+
+    .list{display:flex;flex-direction:column;gap:12px}
+    .camp{
+      display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:10px;background:#fff;border:1px solid #eef2f6;
+    }
+    .camp .thumb{width:140px;height:88px;object-fit:cover;border-radius:8px;background:#f1f5f9;flex:0 0 140px}
+    .camp .body{flex:1}
+    .camp h4{margin:0;font-size:1.02rem}
+    .camp .short{color:var(--muted);margin-top:6px}
+    .camp .usage{margin-top:8px;white-space:pre-wrap}
+    .camp .goals{margin-top:8px}
+    .camp .meta{color:var(--muted);margin-top:6px}
+    .progress{height:12px;background:#eef2f6;border-radius:999px;overflow:hidden;margin-top:8px}
+    .progress-fill{height:100%;background:linear-gradient(90deg,#34d399,#10b981);width:0%}
+
+    .camp .actions{margin-top:10px}
+    .btn{display:inline-block;padding:8px 12px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-weight:700}
+    .btn.ghost{background:transparent;border:1px solid #e6eef6;color:var(--accent)}
+    .note{color:var(--muted);font-size:0.95rem}
+
+    /* achieved list smaller visual weight */
+    .achieved .camp{opacity:0.95}
+
+    /* responsive */
+    @media (max-width:980px){
+      .split-grid{grid-template-columns:1fr;}
+      .camp{flex-direction:column}
+      .camp .thumb{width:100%;height:160px;flex:0 0 auto}
+    }
+
+    /* modal */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;z-index:12000}
+    .modal{width:min(820px,96%);background:#fff;border-radius:10px;padding:16px;color:#111;position:relative;max-height:86vh;overflow:auto}
+    .modal h3{margin:0 0 8px 0}
+    .modal .close{position:absolute;right:12px;top:8px;border:none;background:transparent;font-size:20px;cursor:pointer}
+    .modal .content{white-space:pre-wrap;margin-top:8px}
+  </style>
+</head>
+    <body>
+    <header class="site-banner" role="banner" style="width:100%;background:linear-gradient(90deg,#0f172a,#0b1220);color:#fff;position:sticky;top:0;z-index:1000;box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+    <a href="#main-content" class="skip-link" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">コンテンツへスキップ</a>
+
+    <div class="banner-inner" style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;gap:12px;box-sizing:border-box;">
+        <!-- 左グループ -->
+        <div class="left-group" style="display:flex;gap:8px;align-items:center;">
+        <a href="https://discord.gg/m3tSJ3QCVP" target="_blank" rel="noopener noreferrer" aria-label="Discord" style="display:inline-flex;align-items:center;gap:8px;color:#e6eef8;text-decoration:none;padding:6px 10px;border-radius:6px;font-weight:600;font-size:14px;">
+            <!-- 必要ならここにSVG -->
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="display:block;fill:currentColor;"><!-- ... --></svg>
+            <span>Discord</span>
+        </a>
+
+
+        </div>
+
+        <!-- 中央ブランド -->
+        <div class="brand" style="display:flex;align-items:center;gap:8px;margin:auto;">
+        <img src="./img/server-icon.png" alt="α鯖アイコン" class="brand-icon" style="width:36px;height:36px;">
+        <span class="brand-text" style="font-size:18px;font-weight:800;color:#fff;">α鯖</span>
+        </div>
+
+        <!-- 右グループ（ナビ） -->
+        <nav class="right-group" role="navigation" aria-label="サイトナビゲーション" style="display:flex;align-items:center;gap:12px;">
+        <button class="hamburger" aria-expanded="false" aria-controls="nav-list" aria-label="メニュー" style="display:none;background:none;border:0;padding:6px;cursor:pointer;">
+            <span style="display:block;width:20px;height:2px;background:#fff;margin:4px 0;border-radius:2px;"></span>
+            <span style="display:block;width:20px;height:2px;background:#fff;margin:4px 0;border-radius:2px;"></span>
+            <span style="display:block;width:20px;height:2px;background:#fff;margin:4px 0;border-radius:2px;"></span>
+        </button>
+
+        <ul id="nav-list" class="nav-list" aria-hidden="true" style="display:flex;gap:10px;list-style:none;margin:0;padding:0;align-items:center;">
+            <li><a href="./index.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">トップ</a></li>
+            <li><a href="./events.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">イベント</a></li>
+            <li><a href="./gallery.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">ギャラリー</a></li>
+            <li><a href="./plugins.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">プラグイン</a></li>
+            <li><a href="./rules.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">ルール</a></li>
+            <li><a href="./worlds.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">ワールド</a></li>
+            <li><a href="./donate.html" class="nav-link donate" style="background:linear-gradient(90deg,#ff7a18,#ff3d00);color:#fff;padding:8px 12px;border-radius:8px;font-weight:700;text-decoration:none;box-shadow:0 2px 8px rgba(255,61,0,0.2);">寄付</a></li>
+        </ul>
+        </nav>
+    </div>
+    </header>
+
+        
+  <header>
+    <h1>寄付のお願い</h1>
+    <p>このコミュニティとサーバーを継続するための支援を募集しています。用途と目標を確認のうえご協力ください。</p>
+  </header>
+
+  <main>
+    <!-- 上部の簡単な説明 -->
+    <section class="intro" aria-labelledby="intro-title">
+      <h2 id="intro-title">簡単な説明</h2>
+      <p id="page-desc">読み込み中...</p>
+    </section>
+
+    <!-- 左右分割: 未達成（左・広） / 達成（右・狭） -->
+    <section class="split-area" aria-labelledby="split-title">
+      <h2 id="split-title" style="margin:0 0 8px 0">キャンペーン一覧</h2>
+
+      <div class="split-grid" role="region" aria-label="未達成と達成に分けたキャンペーン">
+        <!-- 未達成（左） -->
+        <div class="panel" id="panel-unachieved" aria-labelledby="unachieved-title">
+          <h3 id="unachieved-title">未達成（募集中）</h3>
+
+          <div class="totals" id="unachieved-totals">
+            <div class="total-item">
+              <div class="label">合計最低目標</div>
+              <div id="unachieved-sum-min" class="value">読み込み中...</div>
+            </div>
+            <div class="total-item">
+              <div class="label">合計目標</div>
+              <div id="unachieved-sum-goal" class="value">読み込み中...</div>
+            </div>
+          </div>
+
+          <div class="list" id="unachieved-list" aria-live="polite"></div>
+        </div>
+
+        <!-- 達成（右） -->
+        <aside class="panel achieved" id="panel-achieved" aria-labelledby="achieved-title">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <h3 id="achieved-title" style="margin:0">達成済み</h3>
+            <div style="display:flex;gap:8px;align-items:center">
+              <div style="font-size:0.9rem;color:var(--muted)">合計</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <div style="background:#fff;padding:6px 8px;border-radius:8px;border:1px solid #eef2f6">
+                  <div style="font-size:0.8rem;color:var(--muted)">最低目標</div>
+                  <div id="achieved-sum-min" style="font-weight:800">読み込み中...</div>
+                </div>
+                <div style="background:#fff;padding:6px 8px;border-radius:8px;border:1px solid #eef2f6">
+                  <div style="font-size:0.8rem;color:var(--muted)">目標</div>
+                  <div id="achieved-sum-goal" style="font-weight:800">読み込み中...</div>
+                </div>
+              </div>
+              <button id="toggle-achieved" class="btn ghost" style="padding:6px 10px;font-size:0.9rem">折りたたむ</button>
+            </div>
+          </div>
+
+          <div id="achieved-list-wrapper" style="margin-top:12px">
+            <div class="list" id="achieved-list" aria-live="polite"></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- 支払い案内（モーダル） -->
+    <div id="pay-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="modal" role="document" aria-labelledby="pay-title">
+        <button class="close" id="pay-close" aria-label="閉じる">&times;</button>
+        <h3 id="pay-title">支払い案内</h3>
+        <div id="payment-info" class="content">読み込み中...</div>
+        <div style="margin-top:12px">
+          <button id="pay-copy" class="btn">支払い情報をコピー</button>
+          <button id="pay-close-2" class="btn ghost" style="margin-left:8px">閉じる</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:14px" class="note-box">
+      <div class="note">このページの内容は管理画面で編集できます（管理者のみ）。</div>
+    </div>
+  </main>
+
+  <footer>
+    © サーバー運営チーム
+  </footer>
+
+  <script>
+    (function(){
+      const INFO_KEY = 'alpha_donation_info_v1';
+      const CAMPS_KEY = 'alpha_donations_v1';
+
+      const pageDescEl = document.getElementById('page-desc');
+
+      const unachievedSumMinEl = document.getElementById('unachieved-sum-min');
+      const unachievedSumGoalEl = document.getElementById('unachieved-sum-goal');
+      const achievedSumMinEl = document.getElementById('achieved-sum-min');
+      const achievedSumGoalEl = document.getElementById('achieved-sum-goal');
+
+      const unachievedListEl = document.getElementById('unachieved-list');
+      const achievedListEl = document.getElementById('achieved-list');
+
+      const payModal = document.getElementById('pay-modal');
+      const paymentInfoEl = document.getElementById('payment-info');
+      const payClose = document.getElementById('pay-close');
+      const payClose2 = document.getElementById('pay-close-2');
+      const payCopyBtn = document.getElementById('pay-copy');
+
+      const toggleBtn = document.getElementById('toggle-achieved');
+      const wrapper = document.getElementById('achieved-list-wrapper');
+
+      function loadInfo(){
+        try{ const raw = localStorage.getItem(INFO_KEY); return raw ? JSON.parse(raw) : {}; }catch(e){ return {}; }
+      }
+      function loadCamps(){
+        try{ const raw = localStorage.getItem(CAMPS_KEY); return raw ? JSON.parse(raw) : []; }catch(e){ return []; }
+      }
+
+      function formatYen(n){
+        if(n === '' || n === null || isNaN(Number(n))) return '—';
+        return Number(n).toLocaleString('ja-JP') + ' 円';
+      }
+
+      function renderSplit(){
+        const info = loadInfo();
+        const camps = loadCamps() || [];
+
+        pageDescEl.textContent = info.description || 'このプロジェクトはコミュニティ運営のための寄付を募集しています。ご支援は運営費、サーバー維持、イベント開催などに使われます。';
+        paymentInfoEl.textContent = info.payment || '支払い方法の案内は管理者が設定していません。';
+
+        // split into achieved / unachieved
+        const achieved = camps.filter(c => c.achieved);
+        const unachieved = camps.filter(c => !c.achieved);
+
+        // totals per side (sum of min and goal)
+        const sum = arr => ({
+          min: arr.reduce((acc,c)=> acc + (Number(c.min) || 0), 0),
+          goal: arr.reduce((acc,c)=> acc + (Number(c.goal) || 0), 0)
+        });
+
+        const uaTotals = sum(unachieved);
+        const aTotals = sum(achieved);
+
+        unachievedSumMinEl.textContent = formatYen(uaTotals.min);
+        unachievedSumGoalEl.textContent = formatYen(uaTotals.goal);
+        achievedSumMinEl.textContent = formatYen(aTotals.min);
+        achievedSumGoalEl.textContent = formatYen(aTotals.goal);
+
+        // sort unachieved by priority (high > medium > low), then newest
+        const prioOrder = { high:3, medium:2, low:1 };
+        unachieved.sort((a,b)=>{
+          const ap = prioOrder[(a.priority||'medium').toLowerCase()] || 2;
+          const bp = prioOrder[(b.priority||'medium').toLowerCase()] || 2;
+          if(ap !== bp) return bp - ap;
+          return (b.createdAt || 0) - (a.createdAt || 0);
+        });
+
+        // sort achieved by most recently achieved; use achievedAt if present, else updatedAt or createdAt
+        achieved.sort((a,b)=>{
+          const at = a.achievedAt || a.updatedAt || a.createdAt || 0;
+          const bt = b.achievedAt || b.updatedAt || b.createdAt || 0;
+          return bt - at;
+        });
+
+        // render lists
+        renderList(unachievedListEl, unachieved, false);
+        renderList(achievedListEl, achieved, true);
+      }
+
+      function renderList(container, items, isAchieved){
+        container.innerHTML = '';
+        if(!items || items.length === 0){
+          const empty = document.createElement('div');
+          empty.className = 'note';
+          empty.textContent = isAchieved ? '達成済みのキャンペーンはありません。' : '募集中のキャンペーンはありません。';
+          container.appendChild(empty);
+          return;
+        }
+
+        items.forEach(c=>{
+          const el = document.createElement('div');
+          el.className = 'camp';
+
+          const img = document.createElement('img');
+          img.className = 'thumb';
+          img.src = c.image || '';
+          img.alt = c.title || '';
+          el.appendChild(img);
+
+          const body = document.createElement('div');
+          body.className = 'body';
+
+          const h = document.createElement('h4');
+          h.textContent = c.title || '(無題)';
+          body.appendChild(h);
+
+          const short = document.createElement('div');
+          short.className = 'short';
+          short.textContent = c.short || '';
+          body.appendChild(short);
+
+          const usage = document.createElement('div');
+          usage.className = 'usage';
+          usage.textContent = c.usage || '';
+          body.appendChild(usage);
+
+          const goals = document.createElement('div');
+          goals.className = 'goals';
+          goals.innerHTML = `<strong>最低目標:</strong> ${formatYen(c.min)}　<strong>目標:</strong> ${formatYen(c.goal)}`;
+          body.appendChild(goals);
+
+          const meta = document.createElement('div');
+          meta.className = 'meta';
+          if(isAchieved){
+            const at = c.achievedAt || c.updatedAt || c.createdAt || null;
+            meta.textContent = at ? `達成: ${new Date(at).toLocaleString()}` : '達成日時: 不明';
+          } else {
+            meta.textContent = `優先度: ${c.priority || 'medium'}`;
+          }
+          body.appendChild(meta);
+
+          const progressWrap = document.createElement('div');
+          progressWrap.className = 'progress';
+          const fill = document.createElement('div');
+          fill.className = 'progress-fill';
+          let pct = 0;
+          if(c.goal && c.goal > 0){
+            // heuristic progress (min/goal)
+            pct = Math.min(100, Math.round((c.min / c.goal) * 100));
+          }
+          fill.style.width = pct + '%';
+          progressWrap.appendChild(fill);
+          body.appendChild(progressWrap);
+
+          // actions: only for unachieved (donate button)
+          if(!isAchieved){
+            const actions = document.createElement('div');
+            actions.className = 'actions';
+            const donateBtn = document.createElement('button');
+            donateBtn.className = 'btn';
+            donateBtn.textContent = '寄付する';
+            donateBtn.addEventListener('click', ()=> {
+              const info = loadInfo();
+              paymentInfoEl.textContent = (info.payment || '支払い方法の案内は管理者が設定していません。') + '\n\n対象キャンペーン：' + (c.title || '(無題)');
+              openPayModal();
+            });
+            actions.appendChild(donateBtn);
+            body.appendChild(actions);
+          }
+
+          el.appendChild(body);
+          container.appendChild(el);
+        });
+      }
+
+      function openPayModal(){
+        payModal.style.display = 'flex';
+        payModal.setAttribute('aria-hidden','false');
+        document.body.style.overflow = 'hidden';
+      }
+      function closePayModal(){
+        payModal.style.display = 'none';
+        payModal.setAttribute('aria-hidden','true');
+        document.body.style.overflow = '';
+      }
+
+      // copy payment info
+      payCopyBtn.addEventListener('click', ()=>{
+        const text = paymentInfoEl.textContent || '';
+        if(!text){ alert('支払い情報がありません'); return; }
+        navigator.clipboard?.writeText(text).then(()=> {
+          payCopyBtn.textContent = 'コピーしました';
+          setTimeout(()=> payCopyBtn.textContent = '支払い情報をコピー', 1200);
+        }).catch(()=> alert('コピーに失敗しました'));
+      });
+
+      // toggle collapse for achieved column
+      let collapsed = false;
+      toggleBtn.addEventListener('click', ()=>{
+        collapsed = !collapsed;
+        wrapper.style.display = collapsed ? 'none' : '';
+        toggleBtn.textContent = collapsed ? '展開する' : '折りたたむ';
+      });
+
+      // close handlers
+      payClose.addEventListener('click', closePayModal);
+      payClose2.addEventListener('click', closePayModal);
+      payModal.addEventListener('click', (e)=> { if(e.target === payModal) closePayModal(); });
+
+      // initial render
+      renderSplit();
+
+      // storage sync
+      window.addEventListener('storage', (e)=>{
+        if(e.key === CAMPS_KEY || e.key === INFO_KEY) renderSplit();
+      });
+    })();
+  </script>
+</body>
+</html>

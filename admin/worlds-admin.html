@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ワールド管理 - α鯖</title>
+  <style>
+    :root{--accent:#2b8a3e;--muted:#6b7280;--bg:#f6f8fa;--card:#fff;--maxw:1200px}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;background:var(--bg);color:#111}
+    header{background:linear-gradient(180deg,#0b1220,#0f172a);color:#fff;padding:18px;text-align:center}
+    main{max-width:var(--maxw);margin:18px auto;padding:18px}
+    .panel{background:var(--card);padding:12px;border-radius:10px;border:1px solid #e6eef6;margin-bottom:12px}
+    label{display:block;font-weight:700;margin-top:8px}
+    input[type="text"], textarea, select{width:100%;padding:8px;border-radius:8px;border:1px solid #e6eef6;margin-top:6px}
+    .row{display:flex;gap:12px;align-items:flex-start}
+    .col{flex:1}
+    .side{width:360px}
+    .btn{padding:8px 12px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer}
+    .btn.ghost{background:transparent;color:var(--accent);border:1px solid #e6eef6}
+    .btn.warn{background:#d9534f}
+    .small{font-size:0.9rem;color:var(--muted);margin-top:8px}
+    .world-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+    .world-item{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;border:1px solid #eef2f6;background:#fff}
+    .chapters{margin-top:8px;display:flex;flex-direction:column;gap:8px}
+    .chapter{border:1px solid #eef2f6;padding:8px;border-radius:8px;background:#fafafa;display:flex;gap:8px}
+    .chapter .left{flex:1}
+    .thumb{width:120px;height:80px;object-fit:cover;border-radius:6px;background:#f1f5f9}
+    .thumb-small{width:72px;height:56px;object-fit:cover;border-radius:6px;background:#f1f5f9}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .note{font-size:0.9rem;color:var(--muted)}
+    .badge{font-weight:700;color:#fff;background:#111;padding:4px 8px;border-radius:999px}
+    .drag-hint{font-size:0.85rem;color:var(--muted)}
+    @media (max-width:980px){ .row{flex-direction:column} .side{width:100%} }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ワールド管理</h1>
+    <p style="margin:6px 0 0;opacity:0.9">公開ページからはアクセスできない管理画面です。ワールド情報をここで編集してください。</p>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>ワールドを追加</h2>
+      <div class="row">
+        <div class="col">
+          <label for="w-name">ワールド名</label>
+          <input id="w-name" type="text" placeholder="例：天空の島">
+
+          <label for="w-desc">簡単な説明</label>
+          <input id="w-desc" type="text" placeholder="このワールドの一言説明">
+
+          <label for="w-long-desc">詳細説明（任意）</label>
+          <textarea id="w-long-desc" rows="4" placeholder="ワールドの詳細説明。改行は公開ページで反映されます。"></textarea>
+
+          <label>章（Chapter）</label>
+          <div class="note">章は自由に追加・削除できます。各章に章題・内容・画像（1枚）を設定してください。</div>
+          <div id="chapters" class="chapters"></div>
+
+          <div class="controls">
+            <button id="add-chapter" class="btn ghost" type="button">章を追加</button>
+            <button id="save-world" class="btn" type="button">ワールドを保存</button>
+            <button id="clear-form" class="btn ghost" type="button">フォームをクリア</button>
+          </div>
+        </div>
+
+        <aside class="side">
+          <label>背景画像（固定表示）</label>
+          <input id="bg-file" type="file" accept="image/*">
+          <div id="bg-preview" style="margin-top:8px"></div>
+
+          <label style="margin-top:12px">ワールド一覧（編集）</label>
+          <div id="world-list" class="world-list"></div>
+
+          <div style="margin-top:12px" class="controls">
+            <button id="export-btn" class="btn ghost" type="button">エクスポート</button>
+            <button id="import-btn" class="btn ghost" type="button">インポート</button>
+            <input id="import-file" type="file" accept="application/json" style="display:none">
+            <button id="clear-all" class="btn warn" type="button">全て削除</button>
+          </div>
+
+          <div class="small" style="margin-top:8px">データは localStorage の <code>alpha_worlds_v1</code> に保存されます。</div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function(){
+      const STORAGE_KEY = 'alpha_worlds_v1';
+      const nameInput = document.getElementById('w-name');
+      const descInput = document.getElementById('w-desc');
+      const longDescInput = document.getElementById('w-long-desc');
+      const chaptersEl = document.getElementById('chapters');
+      const addChapterBtn = document.getElementById('add-chapter');
+      const saveWorldBtn = document.getElementById('save-world');
+      const clearFormBtn = document.getElementById('clear-form');
+      const bgFileInput = document.getElementById('bg-file');
+      const bgPreview = document.getElementById('bg-preview');
+      const worldListEl = document.getElementById('world-list');
+      const exportBtn = document.getElementById('export-btn');
+      const importBtn = document.getElementById('import-btn');
+      const importFile = document.getElementById('import-file');
+      const clearAllBtn = document.getElementById('clear-all');
+
+      let worlds = [];
+      let editingId = null;
+      let bgDataUrl = '';
+
+      function uid(){ return 'w-' + Date.now() + '-' + Math.floor(Math.random()*1000); }
+
+      function load(){
+        try{
+          const raw = localStorage.getItem(STORAGE_KEY);
+          worlds = raw ? JSON.parse(raw) : [];
+        }catch(e){ worlds = []; }
+      }
+      function save(){
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(worlds));
+        try{ window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY })); }catch(e){}
+      }
+
+      // image compression helper
+      function imageFileToCompressedDataURL(file, maxWidth = 1400, quality = 0.8){
+        return new Promise((resolve,reject)=>{
+          const reader = new FileReader();
+          const img = new Image();
+          reader.onload = ()=> {
+            img.onload = ()=>{
+              try{
+                const ratio = img.width / img.height || 1;
+                let targetW = img.width;
+                let targetH = img.height;
+                if(img.width > maxWidth){ targetW = maxWidth; targetH = Math.round(maxWidth / ratio); }
+                const canvas = document.createElement('canvas');
+                canvas.width = targetW; canvas.height = targetH;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+                ctx.drawImage(img,0,0,canvas.width,canvas.height);
+                const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                resolve(dataUrl);
+              }catch(err){ reject(err); }
+            };
+            img.onerror = ()=> reject(new Error('画像読み込み失敗'));
+            img.src = reader.result;
+          };
+          reader.onerror = ()=> reject(new Error('ファイル読み込み失敗'));
+          reader.readAsDataURL(file);
+        });
+      }
+
+      // chapter UI
+      function createChapterRow(ch = { id: 'c-'+Date.now(), title:'', content:'', image:'' }){
+        const wrapper = document.createElement('div');
+        wrapper.className = 'chapter';
+        wrapper.dataset.id = ch.id;
+
+        const left = document.createElement('div'); left.className = 'left';
+        const titleLabel = document.createElement('label'); titleLabel.textContent = '章題';
+        const titleInput = document.createElement('input'); titleInput.type='text'; titleInput.value = ch.title || '';
+        const contentLabel = document.createElement('label'); contentLabel.textContent = '内容';
+        const contentArea = document.createElement('textarea'); contentArea.rows = 4; contentArea.value = ch.content || '';
+        left.appendChild(titleLabel); left.appendChild(titleInput); left.appendChild(contentLabel); left.appendChild(contentArea);
+
+        const right = document.createElement('div'); right.style.width='160px'; right.style.display='flex'; right.style.flexDirection='column'; right.style.gap='8px';
+        const img = document.createElement('img'); img.className='thumb-small'; img.src = ch.image || ''; img.alt = '章画像';
+        const file = document.createElement('input'); file.type='file'; file.accept='image/*';
+        const btns = document.createElement('div'); btns.style.display='flex'; btns.style.gap='6px';
+        const upBtn = document.createElement('button'); upBtn.className='btn ghost'; upBtn.type='button'; upBtn.textContent='↑';
+        const downBtn = document.createElement('button'); downBtn.className='btn ghost'; downBtn.type='button'; downBtn.textContent='↓';
+        const delBtn = document.createElement('button'); delBtn.className='btn ghost'; delBtn.type='button'; delBtn.textContent='削除';
+
+        // file change
+        file.addEventListener('change', async (e)=>{
+          const f = e.target.files && e.target.files[0];
+          if(!f) return;
+          try{
+            img.src = '処理中…';
+            const dataUrl = await imageFileToCompressedDataURL(f, 1200, 0.75);
+            img.src = dataUrl;
+            wrapper.dataset.image = dataUrl;
+          }catch(err){ alert('画像処理に失敗しました'); console.error(err); }
+        });
+
+        upBtn.addEventListener('click', ()=>{
+          const p = wrapper.parentElement;
+          if(p && wrapper.previousElementSibling) p.insertBefore(wrapper, wrapper.previousElementSibling);
+        });
+        downBtn.addEventListener('click', ()=>{
+          const p = wrapper.parentElement;
+          if(p && wrapper.nextElementSibling) p.insertBefore(wrapper.nextElementSibling, wrapper);
+        });
+        delBtn.addEventListener('click', ()=>{
+          if(!confirm('この章を削除しますか？')) return;
+          wrapper.remove();
+        });
+
+        btns.appendChild(upBtn); btns.appendChild(downBtn); btns.appendChild(delBtn);
+        right.appendChild(img); right.appendChild(file); right.appendChild(btns);
+
+        wrapper.appendChild(left); wrapper.appendChild(right);
+
+        // store getters
+        wrapper.getData = ()=>({
+          id: wrapper.dataset.id,
+          title: titleInput.value.trim(),
+          content: contentArea.value.trim(),
+          image: wrapper.dataset.image || img.src || ''
+        });
+
+        return wrapper;
+      }
+
+      addChapterBtn.addEventListener('click', ()=>{
+        const row = createChapterRow({});
+        chaptersEl.appendChild(row);
+      });
+
+      // background file
+      bgFileInput.addEventListener('change', async (e)=>{
+        const f = e.target.files && e.target.files[0];
+        if(!f) return;
+        try{
+          bgPreview.textContent = '処理中…';
+          const dataUrl = await imageFileToCompressedDataURL(f, 1600, 0.75);
+          bgDataUrl = dataUrl;
+          bgPreview.innerHTML = `<img src="${dataUrl}" alt="bg" style="width:100%;border-radius:8px">`;
+        }catch(err){ alert('背景画像の処理に失敗しました'); console.error(err); bgPreview.textContent=''; }
+      });
+
+      // save world
+      saveWorldBtn.addEventListener('click', ()=>{
+        const name = nameInput.value.trim();
+        if(!name){ alert('ワールド名を入力してください'); return; }
+        const chaptersNodes = Array.from(chaptersEl.children);
+        const chapters = chaptersNodes.map(n=> n.getData ? n.getData() : { id: 'c-'+Date.now(), title:'', content:'', image:'' }).filter(c=>c.title || c.content || c.image);
+        const obj = {
+          id: editingId || uid(),
+          name,
+          desc: descInput.value.trim(),
+          longDesc: longDescInput.value.trim(),
+          background: bgDataUrl || '',
+          chapters
+        };
+        if(editingId){
+          const idx = worlds.findIndex(w=>w.id===editingId);
+          if(idx !== -1) worlds[idx] = obj;
+        } else {
+          worlds.push(obj);
+        }
+        save();
+        renderWorldList();
+        clearForm();
+        alert('保存しました');
+      });
+
+      function clearForm(){
+        editingId = null;
+        nameInput.value = '';
+        descInput.value = '';
+        longDescInput.value = '';
+        chaptersEl.innerHTML = '';
+        bgDataUrl = '';
+        bgPreview.innerHTML = '';
+      }
+
+      // render world list
+      function renderWorldList(){
+        worldListEl.innerHTML = '';
+        if(worlds.length === 0){ worldListEl.textContent = 'ワールドは登録されていません。'; return; }
+        worlds.forEach(w=>{
+          const item = document.createElement('div'); item.className='world-item';
+          const left = document.createElement('div'); left.style.display='flex'; left.style.gap='8px'; left.style.alignItems='center';
+          const thumb = document.createElement('img'); thumb.className='thumb'; thumb.src = w.background || (w.chapters && w.chapters[0] && w.chapters[0].image) || '';
+          const info = document.createElement('div'); info.innerHTML = `<div style="font-weight:700">${escapeHtml(w.name)}</div><div class="note">${escapeHtml(w.desc||'')}</div>`;
+          left.appendChild(thumb); left.appendChild(info);
+          const actions = document.createElement('div');
+          const edit = document.createElement('button'); edit.className='btn ghost'; edit.textContent='編集';
+          const del = document.createElement('button'); del.className='btn warn'; del.textContent='削除';
+          edit.addEventListener('click', ()=> loadForEdit(w.id));
+          del.addEventListener('click', ()=> {
+            if(!confirm('このワールドを削除しますか？')) return;
+            worlds = worlds.filter(x=>x.id !== w.id);
+            save();
+            renderWorldList();
+          });
+          actions.appendChild(edit); actions.appendChild(del);
+          item.appendChild(left); item.appendChild(actions);
+          worldListEl.appendChild(item);
+        });
+      }
+
+      function loadForEdit(id){
+        const w = worlds.find(x=>x.id===id);
+        if(!w) return;
+        editingId = id;
+        nameInput.value = w.name || '';
+        descInput.value = w.desc || '';
+        longDescInput.value = w.longDesc || '';
+        bgDataUrl = w.background || '';
+        bgPreview.innerHTML = bgDataUrl ? `<img src="${bgDataUrl}" alt="bg" style="width:100%;border-radius:8px">` : '';
+        chaptersEl.innerHTML = '';
+        (w.chapters || []).forEach(c=>{
+          const row = createChapterRow(c);
+          // ensure dataset image set
+          if(c.image) row.dataset.image = c.image;
+          chaptersEl.appendChild(row);
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // export/import
+      exportBtn.addEventListener('click', ()=>{
+        const data = JSON.stringify(worlds, null, 2);
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'alpha_worlds_export.json';
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      });
+
+      importBtn.addEventListener('click', ()=> importFile.click());
+      importFile.addEventListener('change', (e)=>{
+        const f = e.target.files && e.target.files[0];
+        if(!f) return;
+        const reader = new FileReader();
+        reader.onload = ()=> {
+          try{
+            const parsed = JSON.parse(reader.result);
+            if(!Array.isArray(parsed)) throw new Error('不正な形式');
+            // normalize
+            const normalized = parsed.map(p=>({
+              id: p.id || uid(),
+              name: p.name || '',
+              desc: p.desc || '',
+              longDesc: p.longDesc || '',
+              background: p.background || '',
+              chapters: Array.isArray(p.chapters) ? p.chapters.map(c=>({
+                id: c.id || ('c-'+Date.now()),
+                title: c.title || '',
+                content: c.content || '',
+                image: c.image || ''
+              })) : []
+            }));
+            worlds = worlds.concat(normalized);
+            save();
+            renderWorldList();
+            alert('インポート完了');
+          }catch(err){ alert('インポートに失敗しました：' + err.message); }
+        };
+        reader.readAsText(f);
+      });
+
+      clearAllBtn.addEventListener('click', ()=>{
+        if(!confirm('本当に全てのワールド情報を削除しますか？ この操作は取り消せません。')) return;
+        worlds = [];
+        localStorage.removeItem(STORAGE_KEY);
+        renderWorldList();
+        clearForm();
+        alert('削除しました');
+      });
+
+      function escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+      // init
+      load();
+      renderWorldList();
+
+    })();
+  </script>
+</body>
+</html>

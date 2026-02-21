@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>α鯖 プラグイン一覧</title>
+  <link rel="icon" href="img/favicon.png" type="image/png">
+  <style>
+    :root{
+      --accent:#2b8a3e;
+      --muted:#6b7280;
+      --bg:#f6f8fa;
+      --card:#fff;
+      --maxw:1100px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Inter","Noto Sans JP",sans-serif;background:var(--bg);color:#111;-webkit-font-smoothing:antialiased}
+    header{background:linear-gradient(180deg,#0b1220,#0f172a);color:#fff;padding:28px 18px;text-align:center}
+    header h1{margin:0;font-size:1.6rem}
+    main{max-width:var(--maxw);margin:20px auto;padding:0 18px 60px}
+    .controls{display:flex;gap:10px;align-items:center;justify-content:center;margin:18px 0;flex-wrap:wrap}
+    .tab-btn{padding:8px 12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);background:#fff;cursor:pointer;font-weight:700}
+    .tab-btn[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:transparent;box-shadow:0 10px 30px rgba(43,138,62,0.12)}
+    .list{display:flex;flex-direction:column;gap:14px}
+    .plugin-card{background:var(--card);border-radius:12px;padding:16px;border:1px solid #e6eef6;display:flex;gap:16px;align-items:flex-start;cursor:pointer}
+    .plugin-icon{width:96px;height:96px;border-radius:10px;background:#f1f5f9;flex:0 0 96px;object-fit:cover}
+    .plugin-body{flex:1}
+    .plugin-name{margin:0;font-size:1.15rem}
+    .plugin-meta{display:flex;gap:12px;align-items:center;margin-top:8px}
+    .plugin-desc{margin:10px 0;color:var(--muted);font-size:0.98rem;line-height:1.45}
+    .plugin-commands{margin-top:8px;font-size:0.95rem;color:#0b3bff;display:flex;flex-wrap:wrap;gap:8px}
+    .cmd-pill{background:#eef6ff;padding:6px 10px;border-radius:999px;font-weight:700;color:#0b3bff}
+    .admin-note{font-size:0.95rem;color:var(--muted);text-align:center;margin-top:12px}
+
+    /* modal with two independent scroll areas */
+    .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 10000; pointer-events: none; }
+    .modal[aria-hidden="false"] { display:flex; pointer-events: auto; }
+    .modal-overlay { position: absolute; inset:0; background: rgba(0,0,0,0.6); }
+    .modal-box {
+      position: relative;
+      z-index: 10001;
+      width: 94%;
+      max-width: 1100px;
+      max-height: 86%;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+      display:flex;
+      gap:18px;
+      padding:18px;
+      color:#111;
+      overflow:hidden;
+    }
+    .modal-left{flex:1; display:flex; flex-direction:column; gap:8px; min-width:0; overflow:auto; padding-right:8px}
+    .modal-right{width:360px; max-width:40%; display:flex; flex-direction:column; gap:8px; overflow:auto; border-left:1px solid #eef2f6; padding-left:12px}
+    .modal-title { margin:0; font-size:1.25rem; }
+    .modal-meta { color:var(--muted); font-size:0.95rem; }
+    .modal-desc { margin-top:6px; color:#333; line-height:1.6; white-space:pre-wrap; }
+    .image-item{border-radius:8px; overflow:hidden; background:#f7fafc; display:block; position:relative}
+    .image-item img{width:100%; height:auto; display:block}
+    .image-list{display:flex;flex-direction:column;gap:8px}
+    .badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      font-weight:700;
+      padding:4px 8px;
+      border-radius:999px;
+      font-size:14px;
+      line-height:1;
+      z-index:2;
+    }
+    .modal-close { position:absolute; top:12px; right:12px; background:transparent;border:none;font-size:22px;cursor:pointer }
+    @media (max-width:900px){
+      .modal-box{flex-direction:column}
+      .modal-right{width:100%;max-width:100%;border-left:none;padding-left:0}
+    }
+  </style>
+</head>
+<body>
+    <header class="site-banner" role="banner" style="width:100%;background:linear-gradient(90deg,#0f172a,#0b1220);color:#fff;position:sticky;top:0;z-index:1000;box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+    <a href="#main-content" class="skip-link" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">コンテンツへスキップ</a>
+
+    <div class="banner-inner" style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;gap:12px;box-sizing:border-box;">
+        <!-- 左グループ -->
+        <div class="left-group" style="display:flex;gap:8px;align-items:center;">
+        <a href="https://discord.gg/m3tSJ3QCVP" target="_blank" rel="noopener noreferrer" aria-label="Discord" style="display:inline-flex;align-items:center;gap:8px;color:#e6eef8;text-decoration:none;padding:6px 10px;border-radius:6px;font-weight:600;font-size:14px;">
+            <!-- 必要ならここにSVG -->
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="display:block;fill:currentColor;"><!-- ... --></svg>
+            <span>Discord</span>
+        </a>
+
+
+        </div>
+
+        <!-- 中央ブランド -->
+        <div class="brand" style="display:flex;align-items:center;gap:8px;margin:auto;">
+        <img src="./img/server-icon.png" alt="α鯖アイコン" class="brand-icon" style="width:36px;height:36px;">
+        <span class="brand-text" style="font-size:18px;font-weight:800;color:#fff;">α鯖</span>
+        </div>
+
+        <!-- 右グループ（ナビ） -->
+        <nav class="right-group" role="navigation" aria-label="サイトナビゲーション" style="display:flex;align-items:center;gap:12px;">
+        <button class="hamburger" aria-expanded="false" aria-controls="nav-list" aria-label="メニュー" style="display:none;background:none;border:0;padding:6px;cursor:pointer;">
+            <span style="display:block;width:20px;height:2px;background:#fff;margin:4px 0;border-radius:2px;"></span>
+            <span style="display:block;width:20px;height:2px;background:#fff;margin:4px 0;border-radius:2px;"></span>
+            <span style="display:block;width:20px;height:2px;background:#fff;margin:4px 0;border-radius:2px;"></span>
+        </button>
+
+        <ul id="nav-list" class="nav-list" aria-hidden="true" style="display:flex;gap:10px;list-style:none;margin:0;padding:0;align-items:center;">
+            <li><a href="./index.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">トップ</a></li>
+            <li><a href="./events.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">イベント</a></li>
+            <li><a href="./gallery.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">ギャラリー</a></li>
+            <li><a href="./plugins.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">プラグイン</a></li>
+            <li><a href="./rules.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">ルール</a></li>
+            <li><a href="./worlds.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">ワールド</a></li>
+            <li><a href="./donate.html" class="nav-link donate" style="background:linear-gradient(90deg,#ff7a18,#ff3d00);color:#fff;padding:8px 12px;border-radius:8px;font-weight:700;text-decoration:none;box-shadow:0 2px 8px rgba(255,61,0,0.2);">寄付</a></li>
+        </ul>
+        </nav>
+    </div>
+    </header>
+  <header>
+    <h1>プラグイン一覧</h1>
+    <p style="margin:8px 0 0;opacity:0.9">一般プレイヤー用と管理者用プラグインを切替えて確認できます。カードをクリックすると詳細を表示します。</p>
+  </header>
+
+  <main>
+    <div class="controls" role="tablist" aria-label="プラグインカテゴリ">
+      <button id="tab-player" class="tab-btn" aria-pressed="true" role="tab" aria-controls="panel-plugins">一般プレイヤー用</button>
+      <button id="tab-admin" class="tab-btn" aria-pressed="false" role="tab" aria-controls="panel-plugins">管理者用</button>
+    </div>
+
+    <section id="panel-plugins" aria-live="polite">
+      <div id="plugins-list" class="list" aria-label="プラグイン一覧"></div>
+
+      <div class="admin-note">
+        <div>プラグインの追加・編集は管理者専用ページで行います（公開ページからはアクセスできません）。</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 詳細モーダル（左：文章、右：画像カラム） -->
+  <div id="plugin-modal" class="modal" aria-hidden="true" role="dialog" aria-label="プラグイン詳細">
+    <div class="modal-overlay" id="modal-overlay"></div>
+    <div class="modal-box" role="document">
+      <button id="modal-close" class="modal-close" aria-label="閉じる">&times;</button>
+
+      <div class="modal-left" id="modal-left">
+        <h2 id="modal-title" class="modal-title"></h2>
+        <div id="modal-meta" class="modal-meta"></div>
+        <div id="modal-desc" class="modal-desc"></div>
+
+        <div class="modal-commands" style="margin-top:12px">
+          <h4 style="margin:8px 0 6px">コマンド</h4>
+          <div id="modal-cmds"></div>
+        </div>
+      </div>
+
+      <aside class="modal-right" id="modal-right" aria-label="画像一覧">
+        <h4 style="margin:0">画像</h4>
+        <div id="modal-images" class="image-list"></div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const STORAGE_KEY = 'alpha_plugins_v1';
+      const tabPlayer = document.getElementById('tab-player');
+      const tabAdmin = document.getElementById('tab-admin');
+      const listEl = document.getElementById('plugins-list');
+
+      const modal = document.getElementById('plugin-modal');
+      const modalOverlay = document.getElementById('modal-overlay');
+      const modalClose = document.getElementById('modal-close');
+      const modalLeft = document.getElementById('modal-left');
+      const modalRight = document.getElementById('modal-right');
+      const modalTitle = document.getElementById('modal-title');
+      const modalMeta = document.getElementById('modal-meta');
+      const modalDesc = document.getElementById('modal-desc');
+      const modalCmds = document.getElementById('modal-cmds');
+      const modalImages = document.getElementById('modal-images');
+
+      function loadPlugins(){
+        try{
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if(!raw) return [];
+          return JSON.parse(raw);
+        }catch(e){ return []; }
+      }
+
+      function normalizeCommands(commandsField){
+        if(!commandsField) return [];
+        if(typeof commandsField === 'string'){
+          return commandsField.split(';').map(s=>s.trim()).filter(Boolean);
+        }
+        if(Array.isArray(commandsField)){
+          return commandsField.map(c=>{
+            if(typeof c === 'string') return c.trim();
+            if(c && typeof c === 'object'){
+              return (c.command || '').trim();
+            }
+            return '';
+          }).filter(Boolean);
+        }
+        return [];
+      }
+
+      function circledNumber(n){
+        const map = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩','⑪','⑫','⑬','⑭','⑮','⑯','⑰','⑱','⑲','⑳'];
+        return (n>=1 && n<=20) ? map[n-1] : `(${n})`;
+      }
+
+      function renderList(category){
+        listEl.innerHTML = '';
+        const all = loadPlugins();
+        const filtered = all.filter(p => p.category === category);
+        if(filtered.length === 0){
+          const p = document.createElement('div');
+          p.textContent = '該当するプラグインは登録されていません。';
+          p.style.color = '#666';
+          listEl.appendChild(p);
+          return;
+        }
+        filtered.forEach(p => {
+          const card = document.createElement('article');
+          card.className = 'plugin-card';
+          card.tabIndex = 0;
+          const img = document.createElement('img');
+          img.className = 'plugin-icon';
+          img.src = p.thumbnail || (p.images && p.images[0]) || (p.icon || 'img/plugins/default.png');
+          img.alt = p.name;
+          const body = document.createElement('div');
+          body.className = 'plugin-body';
+          const h = document.createElement('h3');
+          h.className = 'plugin-name';
+          h.textContent = p.name;
+          const meta = document.createElement('div');
+          meta.className = 'plugin-meta';
+          const cat = document.createElement('div');
+          cat.textContent = p.category === 'admin' ? '管理者用' : '一般';
+          cat.style.color = '#666';
+          cat.style.fontSize = '0.95rem';
+          meta.appendChild(cat);
+          const desc = document.createElement('div');
+          desc.className = 'plugin-desc';
+          desc.textContent = p.desc || '';
+          const cmds = document.createElement('div');
+          cmds.className = 'plugin-commands';
+          const commandsArray = normalizeCommands(p.commands);
+          commandsArray.slice(0,4).forEach(cmd => {
+            const pill = document.createElement('span');
+            pill.className = 'cmd-pill';
+            pill.textContent = cmd;
+            cmds.appendChild(pill);
+          });
+          if(commandsArray.length > 4){
+            const more = document.createElement('span');
+            more.style.color = '#666';
+            more.style.marginLeft = '8px';
+            more.textContent = `他 ${commandsArray.length - 4} 件`;
+            cmds.appendChild(more);
+          }
+
+          body.appendChild(h);
+          body.appendChild(meta);
+          body.appendChild(desc);
+          if(cmds.childElementCount) body.appendChild(cmds);
+
+          card.appendChild(img);
+          card.appendChild(body);
+
+          card.addEventListener('click', ()=> openModal(p));
+          card.addEventListener('keypress', (e)=> { if(e.key === 'Enter') openModal(p); });
+
+          listEl.appendChild(card);
+        });
+      }
+
+      function openModal(plugin){
+        modalTitle.textContent = plugin.name || '';
+        modalMeta.textContent = plugin.category === 'admin' ? '管理者用プラグイン' : '一般プレイヤー用プラグイン';
+        modalDesc.textContent = plugin.longDesc || plugin.desc || '';
+        // commands: show each command string on its own line
+        const cmds = normalizeCommands(plugin.commands);
+        modalCmds.innerHTML = '';
+        if(cmds.length === 0){
+          modalCmds.textContent = '登録されたコマンドはありません。';
+        } else {
+          const pre = document.createElement('pre');
+          pre.textContent = cmds.join('\n');
+          modalCmds.appendChild(pre);
+        }
+        // images: show in right column, independent scroll, with numbered badges
+        modalImages.innerHTML = '';
+        const imgs = Array.isArray(plugin.images) ? plugin.images : (plugin.icon ? [plugin.icon] : []);
+        if(imgs.length === 0){
+          modalImages.textContent = '画像は登録されていません。';
+        } else {
+          imgs.forEach((src, idx)=>{
+            const wrap = document.createElement('div');
+            wrap.className = 'image-item';
+            const badge = document.createElement('div');
+            badge.className = 'badge';
+            badge.textContent = circledNumber(idx+1);
+            const im = document.createElement('img');
+            im.src = src;
+            im.alt = plugin.name + ' - ' + (idx+1);
+            wrap.appendChild(badge);
+            wrap.appendChild(im);
+            modalImages.appendChild(wrap);
+          });
+        }
+
+        // show modal
+        modal.setAttribute('aria-hidden','false');
+        modalClose.focus();
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeModal(){
+        modal.setAttribute('aria-hidden','true');
+        modalTitle.textContent = '';
+        modalMeta.textContent = '';
+        modalDesc.textContent = '';
+        modalCmds.innerHTML = '';
+        modalImages.innerHTML = '';
+        document.body.style.overflow = '';
+      }
+
+      modalOverlay.addEventListener('click', closeModal);
+      modalClose.addEventListener('click', closeModal);
+      document.addEventListener('keydown', (e)=>{
+        if(modal.getAttribute('aria-hidden') === 'false' && e.key === 'Escape') closeModal();
+      });
+
+      function setMode(mode){
+        if(mode === 'admin'){
+          tabPlayer.setAttribute('aria-pressed','false');
+          tabAdmin.setAttribute('aria-pressed','true');
+          renderList('admin');
+        } else {
+          tabPlayer.setAttribute('aria-pressed','true');
+          tabAdmin.setAttribute('aria-pressed','false');
+          renderList('player');
+        }
+        try{ localStorage.setItem('alpha_plugins_view_mode', mode); }catch(e){}
+      }
+
+      tabPlayer.addEventListener('click', ()=> setMode('player'));
+      tabAdmin.addEventListener('click', ()=> setMode('admin'));
+
+      window.addEventListener('storage', (e)=>{
+        if(e.key === STORAGE_KEY || e.key === 'alpha_plugins_view_mode') {
+          const mode = localStorage.getItem('alpha_plugins_view_mode') || 'player';
+          setMode(mode);
+        }
+      });
+
+      function escapeHtml(str){
+        if(!str) return '';
+        return String(str).replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]); });
+      }
+
+      // init
+      const savedMode = localStorage.getItem('alpha_plugins_view_mode') || 'player';
+      setMode(savedMode);
+
+    })();
+  </script>
+</body>
+</html>

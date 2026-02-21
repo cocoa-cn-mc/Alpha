@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>サーバー情報 - α鯖</title>
+  <style>
+    :root{--accent:#2b8a3e;--muted:#6b7280;--bg:#f6f8fa;--card:#fff;--maxw:1100px}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto;background:var(--bg);color:#111}
+    header{background:linear-gradient(180deg,#0b1220,#0f172a);color:#fff;padding:18px;text-align:center}
+    .banner{width:100%;height:220px;background:#0b1220;display:flex;align-items:center;justify-content:center;color:#fff;position:relative;overflow:hidden}
+    .banner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.18}
+    .banner .inner{position:relative;z-index:2;text-align:center}
+    main{max-width:var(--maxw);margin:20px auto;padding:18px}
+    .top-row{display:flex;gap:16px;align-items:flex-start}
+    .connect-card{flex:1;background:#fff;border-radius:12px;padding:16px;border:1px solid #eef2f6;display:flex;gap:12px;align-items:center}
+    .connect-left{flex:1}
+    .connect-right{width:320px;flex:0 0 320px}
+    .server-name{font-size:1.4rem;font-weight:800}
+    .status-badge{display:inline-block;padding:6px 10px;border-radius:999px;color:#fff;font-weight:700}
+    .status-online{background:#16a34a}
+    .status-maint{background:#f59e0b}
+    .status-off{background:#ef4444}
+    .addr{font-weight:800;font-size:1.05rem}
+    .addr-sub{color:var(--muted);font-size:0.95rem}
+    .btn-copy{padding:8px 10px;border-radius:8px;border:1px solid #e6eef6;background:#fff;cursor:pointer}
+    .resource{margin-top:12px}
+    .res-row{display:flex;gap:8px;align-items:center}
+    .res-bar{height:12px;background:#eef2f6;border-radius:999px;flex:1;overflow:hidden}
+    .res-fill{height:100%;background:linear-gradient(90deg,#34d399,#10b981);width:0%}
+    .meta{color:var(--muted);font-size:0.9rem}
+    .updates{margin-top:18px;display:flex;flex-direction:column;gap:12px}
+    .update-card{display:flex;gap:12px;align-items:flex-start;background:#fff;padding:12px;border-radius:10px;border:1px solid #eef2f6}
+    .update-thumb{width:180px;height:110px;object-fit:cover;border-radius:8px;background:#f1f5f9}
+    .update-title{font-weight:800}
+    .note{color:var(--muted);font-size:0.95rem}
+    .countdown{font-weight:700;color:#ef4444}
+    @media (max-width:980px){ .top-row{flex-direction:column} .connect-right{width:100%;flex:0 0 auto} .connect-card{flex-direction:column;align-items:flex-start} .update-thumb{width:100%;height:auto} }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="banner" id="banner">
+      <img id="banner-img" src="" alt="" style="display:none">
+      <div class="inner">
+        <h1 id="banner-title">サーバー情報</h1>
+        <div id="banner-sub" class="meta">接続情報・バージョン・最新アプデを確認できます</div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="top-row">
+      <div class="connect-card" aria-live="polite">
+        <div class="connect-left">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+            <div>
+              <div class="server-name" id="srv-name">サーバー名</div>
+              <div class="meta" id="srv-location">所在地</div>
+            </div>
+            <div id="srv-status-badge" class="status-badge status-online">ONLINE</div>
+          </div>
+
+          <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:220px">
+              <div class="meta">Java Edition</div>
+              <div class="addr" id="java-addr">未設定</div>
+              <div class="addr-sub" id="java-version">バージョン情報</div>
+              <div style="margin-top:8px">
+                <button id="copy-java" class="btn-copy">コピー</button>
+                <button id="launch-java" class="btn-copy">起動用コピー</button>
+              </div>
+            </div>
+
+            <div style="flex:1;min-width:220px">
+              <div class="meta">Bedrock / 統合版</div>
+              <div class="addr" id="bedrock-addr">未設定</div>
+              <div class="addr-sub" id="bedrock-note">接続補足</div>
+              <div style="margin-top:8px">
+                <button id="copy-bedrock" class="btn-copy">コピー</button>
+                <button id="launch-bedrock" class="btn-copy">起動用コピー</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="resource">
+            <div class="meta">リソース（RAM / CPU / コア）</div>
+            <div class="res-row" style="margin-top:6px">
+              <div class="res-bar" aria-hidden="true"><div id="res-fill" class="res-fill"></div></div>
+              <div style="width:120px;text-align:right;font-weight:700" id="res-text">未設定</div>
+            </div>
+            <div style="margin-top:8px" class="meta">ディスク / ネットワーク: <span id="srv-storage">未設定</span></div>
+          </div>
+        </div>
+
+        <div class="connect-right">
+          <div class="meta">公式 Discord</div>
+          <div style="margin-top:6px"><a id="srv-discord" href="#" target="_blank" rel="noopener noreferrer">未設定</a></div>
+
+          <div style="margin-top:12px" class="meta">公式サイト / サポート</div>
+          <div style="margin-top:6px"><a id="srv-website" href="#" target="_blank" rel="noopener noreferrer">未設定</a></div>
+
+          <div style="margin-top:12px" class="meta">次回メンテ</div>
+          <div style="margin-top:6px" id="srv-maint">未設定</div>
+          <div style="margin-top:8px" id="srv-countdown" class="countdown" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+
+    <section style="margin-top:18px">
+      <h2>最新アプデ情報</h2>
+      <div id="updates-container" class="updates"></div>
+      <div id="updates-empty" class="note" style="display:none">投稿はありません。</div>
+    </section>
+  </main>
+
+  <script>
+    (function(){
+      const SERVER_KEY = 'alpha_server_v1';
+      const UPDATES_KEY = 'alpha_updates_v1';
+
+      // elements
+      const bannerImg = document.getElementById('banner-img');
+      const bannerTitle = document.getElementById('banner-title');
+      const bannerSub = document.getElementById('banner-sub');
+
+      const nameEl = document.getElementById('srv-name');
+      const locationEl = document.getElementById('srv-location');
+      const statusBadge = document.getElementById('srv-status-badge');
+
+      const javaAddr = document.getElementById('java-addr');
+      const bedrockAddr = document.getElementById('bedrock-addr');
+      const javaVersion = document.getElementById('java-version');
+      const bedrockNote = document.getElementById('bedrock-note');
+      const resFill = document.getElementById('res-fill');
+      const resText = document.getElementById('res-text');
+      const storageEl = document.getElementById('srv-storage');
+      const maintEl = document.getElementById('srv-maint');
+      const countdownEl = document.getElementById('srv-countdown');
+
+      const discordLink = document.getElementById('srv-discord');
+      const websiteLink = document.getElementById('srv-website');
+
+      const updatesContainer = document.getElementById('updates-container');
+      const updatesEmpty = document.getElementById('updates-empty');
+
+      const copyJavaBtn = document.getElementById('copy-java');
+      const copyBedrockBtn = document.getElementById('copy-bedrock');
+      const launchJavaBtn = document.getElementById('launch-java');
+      const launchBedrockBtn = document.getElementById('launch-bedrock');
+
+      function loadServer(){ try{ const raw = localStorage.getItem(SERVER_KEY); return raw ? JSON.parse(raw) : {}; }catch(e){ return {}; } }
+      function loadUpdates(){ try{ const raw = localStorage.getItem(UPDATES_KEY); return raw ? JSON.parse(raw) : []; }catch(e){ return []; } }
+
+      function escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+      function renderServer(){
+        const s = loadServer();
+        nameEl.textContent = s.name || 'サーバー名未設定';
+        locationEl.textContent = s.location || '';
+
+        const st = s.status || 'online';
+        statusBadge.className = 'status-badge ' + (st === 'online' ? 'status-online' : (st === 'maintenance' ? 'status-maint' : 'status-off'));
+        statusBadge.textContent = (st === 'online' ? 'ONLINE' : (st === 'maintenance' ? 'MAINTENANCE' : 'OFFLINE'));
+
+        const java = (s.java && s.java.ip) ? (s.java.ip + (s.java.port ? ':' + s.java.port : '')) : '未設定';
+        const bedrock = (s.bedrock && s.bedrock.ip) ? (s.bedrock.ip + (s.bedrock.port ? ':' + s.bedrock.port : '')) : '未設定';
+        javaAddr.textContent = java;
+        bedrockAddr.textContent = bedrock;
+
+        javaVersion.textContent = (s.minecraftVersion ? 'サーバー: ' + s.minecraftVersion + (s.compatibleClients ? ' ／ 対応: ' + s.compatibleClients : '') : '');
+        bedrockNote.textContent = (s.bedrock && s.bedrock.notes) ? s.bedrock.notes : '';
+        storageEl.textContent = (s.storage ? s.storage + ' ／ ' : '') + (s.network ? s.network : '');
+
+        resText.textContent = (s.maxMemory ? 'RAM ' + s.maxMemory + ' / ' : '') + (s.cpu ? s.cpu + ' / ' : '') + (s.cores ? s.cores : '未設定');
+        // simple fill: if maxMemory contains number like "8GB" use percent heuristic (not exact)
+        let fillPct = 40;
+        if(s.maxMemory){
+          const m = parseFloat(s.maxMemory);
+          if(!isNaN(m)) fillPct = Math.min(100, Math.round((m / 16) * 100)); // assume 16GB as baseline
+        }
+        resFill.style.width = fillPct + '%';
+
+        maintEl.textContent = (s.maintenance && s.maintenance.next ? s.maintenance.next + (s.maintenance.note ? ' — ' + s.maintenance.note : '') : '未設定');
+        updateCountdown(s.maintenance && s.maintenance.next ? s.maintenance.next : null);
+
+        discordLink.href = s.discord || '#';
+        discordLink.textContent = s.discord ? '参加する' : '未設定';
+        websiteLink.href = s.website || '#';
+        websiteLink.textContent = s.website ? '公式サイト' : '未設定';
+
+        // banner
+        if(s.banner){
+          bannerImg.src = s.banner;
+          bannerImg.style.display = '';
+          bannerTitle.textContent = s.name || 'サーバー情報';
+          bannerSub.textContent = s.location || '';
+        } else {
+          bannerImg.style.display = 'none';
+          bannerTitle.textContent = s.name || 'サーバー情報';
+          bannerSub.textContent = s.location || '';
+        }
+      }
+
+      function renderUpdates(){
+        updatesContainer.innerHTML = '';
+        const ups = loadUpdates();
+        if(!ups || ups.length === 0){ updatesEmpty.style.display = 'block'; return; }
+        updatesEmpty.style.display = 'none';
+        const sorted = ups.slice().sort((a,b)=> b.createdAt - a.createdAt);
+        sorted.forEach(u=>{
+          const card = document.createElement('div'); card.className = 'update-card';
+          const thumb = document.createElement('img'); thumb.className = 'update-thumb'; thumb.src = u.image || '';
+          const body = document.createElement('div');
+          const title = document.createElement('div'); title.className = 'update-title'; title.textContent = u.title || '(無題)';
+          const meta = document.createElement('div'); meta.className = 'note'; meta.textContent = new Date(u.createdAt).toLocaleString();
+          const desc = document.createElement('div'); desc.style.whiteSpace = 'pre-wrap'; desc.textContent = u.description || '';
+          body.appendChild(title); body.appendChild(meta); body.appendChild(desc);
+          card.appendChild(thumb); card.appendChild(body);
+          updatesContainer.appendChild(card);
+        });
+      }
+
+      // copy handlers
+      copyJavaBtn.addEventListener('click', ()=>{
+        const text = javaAddr.textContent || '';
+        navigator.clipboard?.writeText(text).then(()=> { copyJavaBtn.textContent = 'コピーしました'; setTimeout(()=> copyJavaBtn.textContent = 'コピー', 1200); }).catch(()=> alert('コピーに失敗しました'));
+      });
+      copyBedrockBtn.addEventListener('click', ()=>{
+        const text = bedrockAddr.textContent || '';
+        navigator.clipboard?.writeText(text).then(()=> { copyBedrockBtn.textContent = 'コピーしました'; setTimeout(()=> copyBedrockBtn.textContent = 'コピー', 1200); }).catch(()=> alert('コピーに失敗しました'));
+      });
+
+      // "launch" buttons: copy a launch-friendly string (minecraft:// or bedrock:// not standardized) — we copy ip:port
+      launchJavaBtn.addEventListener('click', ()=>{
+        const text = javaAddr.textContent || '';
+        navigator.clipboard?.writeText(text).then(()=> { launchJavaBtn.textContent = 'コピーしました'; setTimeout(()=> launchJavaBtn.textContent = '起動用コピー', 1200); }).catch(()=> alert('コピーに失敗しました'));
+      });
+      launchBedrockBtn.addEventListener('click', ()=>{
+        const text = bedrockAddr.textContent || '';
+        navigator.clipboard?.writeText(text).then(()=> { launchBedrockBtn.textContent = 'コピーしました'; setTimeout(()=> launchBedrockBtn.textContent = '起動用コピー', 1200); }).catch(()=> alert('コピーに失敗しました'));
+      });
+
+      // maintenance countdown
+      let countdownTimer = null;
+      function updateCountdown(next){
+        if(countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+        if(!next){ countdownEl.textContent = ''; return; }
+        const t = Date.parse(next);
+        if(isNaN(t)){ countdownEl.textContent = ''; return; }
+        function tick(){
+          const diff = t - Date.now();
+          if(diff <= 0){ countdownEl.textContent = 'メンテ中または終了'; clearInterval(countdownTimer); countdownTimer = null; return; }
+          const d = Math.floor(diff / (1000*60*60*24));
+          const h = Math.floor((diff / (1000*60*60)) % 24);
+          const m = Math.floor((diff / (1000*60)) % 60);
+          const s = Math.floor((diff / 1000) % 60);
+          countdownEl.textContent = `次回メンテまで: ${d}日 ${h}時間 ${m}分 ${s}秒`;
+        }
+        tick();
+        countdownTimer = setInterval(tick, 1000);
+      }
+
+      // init
+      renderServer();
+      renderUpdates();
+
+      // storage sync
+      window.addEventListener('storage', (e)=>{
+        if(e.key === SERVER_KEY) renderServer();
+        if(e.key === UPDATES_KEY) renderUpdates();
+      });
+
+    })();
+  </script>
+</body>
+</html>

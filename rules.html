@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>α鯖 ルールとポリシー（表示切替）</title>
+  <meta name="description" content="利用規約・プライバシー・処罰・運営対応を「わかりやすい」表現と「正式文」で切替表示できます。">
+
+  <!-- Favicon -->
+  <link rel="icon" href="img/favicon.png" type="image/png">
+
+  <style>
+    :root{
+      --bg:#f7f9fb;
+      --card:#ffffff;
+      --accent:#2f9e44;
+      --muted:#6b7280;
+      --text:#111827;
+      --maxw:980px;
+      --gap:14px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: "Noto Sans JP","Inter",system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;
+      background:var(--bg);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      line-height:1.6;
+    }
+    header{
+      background:linear-gradient(180deg,#0f172a,#0b1220);
+      color:#fff;
+      padding:34px 18px;
+      text-align:center;
+    }
+    header h1{margin:0;font-size:1.5rem;letter-spacing:0.6px}
+    header p{margin:8px 0 0;opacity:0.95}
+    main{max-width:var(--maxw);margin:22px auto;padding:0 18px 48px}
+    .controls{display:flex;gap:10px;align-items:center;justify-content:center;margin-bottom:18px;flex-wrap:wrap}
+    .mode-btn{
+      padding:8px 12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);
+      background:#fff;color:var(--text);cursor:pointer;font-weight:700;
+      box-shadow:0 6px 18px rgba(2,6,23,0.04);
+    }
+    .mode-btn[aria-pressed="true"]{ background:var(--accent); color:#fff; border-color:transparent; box-shadow:0 12px 30px rgba(47,158,68,0.12); }
+    nav.toc{background:var(--card);border-radius:12px;padding:12px 14px;margin-bottom:16px;border:1px solid #e6eef6;display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+    nav.toc a{display:inline-block;padding:6px 10px;border-radius:8px;background:#f1f5f9;color:var(--text);text-decoration:none;font-size:0.95rem}
+    .card{background:var(--card);border-radius:12px;padding:16px;margin-bottom:12px;border:1px solid #e6eef6}
+    h2{margin:0 0 8px;font-size:1.05rem}
+    .lead{color:var(--muted);margin-bottom:10px}
+    ul{margin:8px 0 0 18px;padding:0}
+    li{margin:8px 0}
+    .small{font-size:0.92rem;color:var(--muted)}
+    footer{max-width:var(--maxw);margin:18px auto 40px;padding:0 18px;color:var(--muted);font-size:0.9rem;text-align:center}
+
+    /* 切替表示領域 */
+    .view-area{position:relative}
+    .view-panel{display:none;opacity:0;transform:translateY(6px);transition:opacity .18s ease, transform .18s ease}
+    .view-panel[aria-hidden="false"]{display:block;opacity:1;transform:none}
+
+    /* 法的文言は少しフォントを堅めに見せる */
+    .legal p, .legal li { font-size:0.98rem; color:var(--text); }
+    .legal .clause { margin:10px 0; padding-left:12px; border-left:3px solid #eef2f6; background:#fbfdff; border-radius:6px; padding-top:8px; padding-bottom:8px; }
+
+    /* レスポンシブ */
+    @media (max-width:720px){
+      header{padding:22px 12px}
+      .mode-btn{padding:8px 10px}
+      nav.toc{padding:10px}
+    }
+  </style>
+</head>
+<body>
+    <header class="site-banner" role="banner" style="width:100%;background:linear-gradient(90deg,#0f172a,#0b1220);color:#fff;position:sticky;top:0;z-index:1000;box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+    <a href="#main-content" class="skip-link" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">コンテンツへスキップ</a>
+
+    <div class="banner-inner" style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;gap:12px;box-sizing:border-box;">
+        <!-- 左グループ -->
+        <div class="left-group" style="display:flex;gap:8px;align-items:center;">
+        <a href="https://discord.gg/m3tSJ3QCVP" target="_blank" rel="noopener noreferrer" aria-label="Discord" style="display:inline-flex;align-items:center;gap:8px;color:#e6eef8;text-decoration:none;padding:6px 10px;border-radius:6px;font-weight:600;font-size:14px;">
+            <!-- 必要ならここにSVG -->
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="display:block;fill:currentColor;"><!-- ... --></svg>
+            <span>Discord</span>
+        </a>
+
+
+        </div>
+
+        <!-- 中央ブランド -->
+        <div class="brand" style="display:flex;align-items:center;gap:8px;margin:auto;">
+        <img src="./img/server-icon.png" alt="α鯖アイコン" class="brand-icon" style="width:36px;height:36px;">
+        <span class="brand-text" style="font-size:18px;font-weight:800;color:#fff;">α鯖</span>
+        </div>
+
+        <!-- 右グループ（ナビ） -->
+        <nav class="right-group" role="navigation" aria-label="サイトナビゲーション" style="display:flex;align-items:center;gap:12px;">
+        <button class="hamburger" aria-expanded="false" aria-controls="nav-list" aria-label="メニュー" style="display:none;background:none;border:0;padding:6px;cursor:pointer;">
+            <span style="display:block;width:20px;height:2px;background:#fff;margin:4px 0;border-radius:2px;"></span>
+            <span style="display:block;width:20px;height:2px;background:#fff;margin:4px 0;border-radius:2px;"></span>
+            <span style="display:block;width:20px;height:2px;background:#fff;margin:4px 0;border-radius:2px;"></span>
+        </button>
+
+        <ul id="nav-list" class="nav-list" aria-hidden="true" style="display:flex;gap:10px;list-style:none;margin:0;padding:0;align-items:center;">
+            <li><a href="./index.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">トップ</a></li>
+            <li><a href="./events.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">イベント</a></li>
+            <li><a href="./gallery.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">ギャラリー</a></li>
+            <li><a href="./plugins.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">プラグイン</a></li>
+            <li><a href="./rules.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">ルール</a></li>
+            <li><a href="./worlds.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">ワールド</a></li>
+            <li><a href="./donate.html" class="nav-link donate" style="background:linear-gradient(90deg,#ff7a18,#ff3d00);color:#fff;padding:8px 12px;border-radius:8px;font-weight:700;text-decoration:none;box-shadow:0 2px 8px rgba(255,61,0,0.2);">寄付</a></li>
+        </ul>
+        </nav>
+    </div>
+    </header>
+  <header>
+    <h1>α鯖 ルールとポリシー</h1>
+    <p>「簡潔文」と「法的に厳密」表現を切替えて表示できます</p>
+  </header>
+
+  <main>
+    <div class="controls" role="tablist" aria-label="表示モード切替">
+      <button id="btn-simple" class="mode-btn" aria-pressed="true" role="tab" aria-controls="panel-simple">わかりやすい（簡潔）</button>
+      <button id="btn-legal" class="mode-btn" aria-pressed="false" role="tab" aria-controls="panel-legal">正式文</button>
+    </div>
+
+    <nav class="toc" aria-label="目次">
+      <a href="#terms">利用規約</a>
+      <a href="#privacy">プライバシー</a>
+      <a href="#penalties">処罰方針</a>
+      <a href="#operations">運営対応</a>
+      <a href="#disclaimer">免責・準拠法</a>
+      <a href="#contact">お問い合わせ</a>
+    </nav>
+
+    <div class="view-area">
+
+      <!-- 簡潔でわかりやすいパターン -->
+      <section id="panel-simple" class="view-panel" aria-hidden="false">
+        <section id="terms" class="card" aria-labelledby="terms-heading">
+          <h2 id="terms-heading">利用規約（簡潔）</h2>
+          <p class="lead">みんなが安心して遊べるための基本ルールです。短く、誠実に。</p>
+          <ul>
+            <li><strong>目的</strong> サーバーと関連サービスの利用条件を定めます。</li>
+            <li><strong>禁止</strong> 嫌がらせ、差別、チート、不正、違法行為、アカウント売買や共有は禁止です。</li>
+            <li><strong>自己管理</strong> アカウントは自分で管理してください。問題は自己責任です。</li>
+            <li><strong>運営権限</strong> 投稿や建築、チャットは運営が表示・非表示・削除できます。</li>
+          </ul>
+        </section>
+
+        <section id="privacy" class="card" aria-labelledby="privacy-heading">
+          <h2 id="privacy-heading">プライバシーポリシー（簡潔）</h2>
+          <p class="lead">必要最小限の情報だけを集め、運営と安全のために使います。</p>
+          <ul>
+            <li>収集：接続ログ、アカウント名、サポート連絡時の情報など。</li>
+            <li>利用：サービス提供、セキュリティ、サポート、法令対応。</li>
+            <li>第三者提供：法令対応や安全確保を除き行いません。</li>
+            <li>削除：不要になった情報は削除または匿名化します。削除希望はお問い合わせください。</li>
+          </ul>
+        </section>
+
+        <section id="penalties" class="card" aria-labelledby="penalties-heading">
+          <h2 id="penalties-heading">処罰方針（簡潔）</h2>
+          <p class="lead">公平に、段階的に対応します。まずは警告、重大な場合は即時措置。</p>
+          <ul>
+            <li>基本：警告 → 一時停止 → 永久BAN。</li>
+            <li>即時措置：チートや詐欺など重大な違反は警告なしで停止することがあります。</li>
+            <li>異議：処罰には証拠を用い、異議申し立てを受け付けます。</li>
+          </ul>
+        </section>
+
+        <section id="operations" class="card" aria-labelledby="operations-heading">
+          <h2 id="operations-heading">運営の対応（簡潔）</h2>
+          <p class="lead">通報は迅速・公平に。改善を続けます。</p>
+          <ul>
+            <li>通報後は事実確認し、必要な暫定措置を行います。</li>
+            <li>判断は複数の証拠に基づき公平に行います。</li>
+            <li>結果は当事者に通知し、対応履歴を保管します。</li>
+          </ul>
+        </section>
+
+        <section id="disclaimer" class="card" aria-labelledby="disclaimer-heading">
+          <h2 id="disclaimer-heading">免責と準拠法（簡潔）</h2>
+          <ul>
+            <li>免責：サーバー停止やデータ損失は、故意または重大な過失がない限り責任を負いません。</li>
+            <li>紛争解決：まずは当事者間の協議を行い、運営が仲介します。未成年が関与する場合は保護者の協力を得て対応します。</li>
+          </ul>
+        </section>
+
+        <section id="contact" class="card" aria-labelledby="contact-heading">
+          <h2 id="contact-heading">お問い合わせ（簡潔）</h2>
+          <p class="lead">通報・異議・プライバシー相談は公式Discordまたはサポートフォームへ。</p>
+          <div class="small">初回応答は原則48時間以内を目指します。緊急は優先対応。</div>
+        </section>
+      </section>
+
+      <!-- 法的に厳密なパターン -->
+      <section id="panel-legal" class="view-panel legal" aria-hidden="true">
+        <section id="terms-legal" class="card" aria-labelledby="terms-legal-heading">
+          <h2 id="terms-legal-heading">利用規約（法的文言）</h2>
+          <p class="lead">本規約は本サーバー（以下「当サーバー」）の利用条件を定めます。利用者は本規約に同意したものとみなします。</p>
+
+          <div class="clause">
+            <strong>第1条（適用）</strong>
+            <p>本規約は当サーバーの利用に関する一切に適用されます。運営は必要に応じて本規約を改定することができ、改定後の規約は当サーバー上で告知した時点から効力を生じます。</p>
+          </div>
+
+          <div class="clause">
+            <strong>第2条（禁止行為）</strong>
+            <p>利用者は以下の行為を行ってはなりません：他者への誹謗中傷、差別、嫌がらせ、チート・不正ツールの使用、違法行為、アカウントの売買・譲渡・共有、運営の業務を妨害する行為等。</p>
+          </div>
+
+          <div class="clause">
+            <strong>第3条（アカウント管理）</strong>
+            <p>アカウント情報の管理は利用者の責任とします。第三者による不正利用があった場合でも、運営は故意または重大な過失がない限り責任を負いません。</p>
+          </div>
+
+          <div class="clause">
+            <strong>第4条（コンテンツの取扱い）</strong>
+            <p>利用者が投稿したコンテンツは運営が表示・非表示・削除できるものとし、運営は必要に応じて当該コンテンツを利用・保存することがあります。</p>
+          </div>
+        </section>
+
+        <section id="privacy-legal" class="card" aria-labelledby="privacy-legal-heading">
+          <h2 id="privacy-legal-heading">プライバシーポリシー（法的文言）</h2>
+          <p class="lead">当サーバーは個人情報保護に関する法令を遵守し、以下の方針に従って取り扱います。</p>
+
+          <div class="clause">
+            <strong>1. 収集する情報</strong>
+            <p>当サーバーは、サービス提供に必要な範囲で接続ログ、アカウント名、サポート連絡時の情報等を収集します。</p>
+          </div>
+
+          <div class="clause">
+            <strong>2. 利用目的</strong>
+            <p>収集した情報はサービス提供、セキュリティ対策、サポート対応、法令遵守のために利用します。</p>
+          </div>
+
+          <div class="clause">
+            <strong>3. 第三者提供</strong>
+            <p>法令に基づく場合や人の生命・安全を守るために必要な場合を除き、利用者の同意なく第三者に提供しません。</p>
+          </div>
+
+          <div class="clause">
+            <strong>4. 保管・削除</strong>
+            <p>目的達成後は速やかに削除または匿名化を行います。削除希望は所定の窓口で受け付けます。</p>
+          </div>
+        </section>
+
+        <section id="penalties-legal" class="card" aria-labelledby="penalties-legal-heading">
+          <h2 id="penalties-legal-heading">処罰方針（法的文言）</h2>
+          <p class="lead">違反行為に対しては、証拠に基づき合理的かつ一貫した手続きで対応します。</p>
+
+          <div class="clause">
+            <strong>1. 対応の原則</strong>
+            <p>原則として警告、利用停止（一定期間）、永久的な利用停止（BAN）の順で処分を行います。違反の重大性、再発性、被害の程度により判断します。</p>
+          </div>
+
+          <div class="clause">
+            <strong>2. 即時措置</strong>
+            <p>チート、詐欺、重大な嫌がらせ等、コミュニティの安全を著しく損なう行為については、事前警告なく即時のアクセス停止を行う場合があります。</p>
+          </div>
+
+          <div class="clause">
+            <strong>3. 異議申立て</strong>
+            <p>処罰に対する異議は所定の窓口で受け付け、合理的な範囲で再調査を行います。</p>
+          </div>
+        </section>
+
+        <section id="operations-legal" class="card" aria-labelledby="operations-legal-heading">
+          <h2 id="operations-legal-heading">運営の対応（法的文言）</h2>
+
+          <div class="clause">
+            <strong>1. 事実確認と暫定措置</strong>
+            <p>通報を受けた場合、運営は速やかに事実確認を行い、必要に応じて暫定的なアクセス制限等の措置を講じます。</p>
+          </div>
+
+          <div class="clause">
+            <strong>2. 公平性と記録</strong>
+            <p>判断は複数の証拠に基づき行い、対応履歴を記録します。個人情報は適切に保護します。</p>
+          </div>
+
+          <div class="clause">
+            <strong>3. 改善措置</strong>
+            <p>再発防止のため、ルールや技術的対策を継続的に見直します。</p>
+          </div>
+        </section>
+
+        <section id="disclaimer-legal" class="card" aria-labelledby="disclaimer-legal-heading">
+          <h2 id="disclaimer-legal-heading">免責および準拠法（法的文言）</h2>
+          <div class="clause">
+            <strong>免責</strong>
+            <p>当サーバーの停止、データ消失等について、運営は故意または重大な過失がある場合を除き、一切の責任を負いません。</p>
+          </div>
+          <div class="clause">
+            <strong>紛争解決</strong>
+            <p>当事者間の紛争は、まず誠実な協議により解決を図るものとします。協議で解決しない場合、運営は仲裁・調停の利用を提案することができ、未成年者が当事者である場合はその法定代理人（保護者等）を通じて手続きを行うものとします。最終的に訴訟が必要となる場合、当該訴訟手続きは当事者またはその法定代理人が行うものとします。</p>
+          </div>
+        </section>
+
+        <section id="contact-legal" class="card" aria-labelledby="contact-legal-heading">
+          <h2 id="contact-legal-heading">お問い合わせ（法的文言）</h2>
+          <p class="lead">通報・異議・個人情報に関する請求は公式Discordまたはサポートフォームで受け付けます。</p>
+          <div class="small">初回応答は原則48時間以内を目指します。通報時は日時・対象・状況・証拠を添えてください。</div>
+        </section>
+      </section>
+
+    </div>
+
+  </main>
+
+  <footer>
+    <div>このページは簡潔版と法的版を切替できます。最終更新: 2026年1月</div>
+  </footer>
+
+  <script>
+    (function(){
+      const btnSimple = document.getElementById('btn-simple');
+      const btnLegal = document.getElementById('btn-legal');
+      const panelSimple = document.getElementById('panel-simple');
+      const panelLegal = document.getElementById('panel-legal');
+      const STORAGE_KEY = 'alpha_rules_view_mode_v1';
+
+      function setMode(mode){
+        if(mode === 'legal'){
+          panelSimple.setAttribute('aria-hidden','true');
+          panelLegal.setAttribute('aria-hidden','false');
+          btnSimple.setAttribute('aria-pressed','false');
+          btnLegal.setAttribute('aria-pressed','true');
+        } else {
+          panelSimple.setAttribute('aria-hidden','false');
+          panelLegal.setAttribute('aria-hidden','true');
+          btnSimple.setAttribute('aria-pressed','true');
+          btnLegal.setAttribute('aria-pressed','false');
+        }
+        try { localStorage.setItem(STORAGE_KEY, mode); } catch(e){}
+      }
+
+      btnSimple.addEventListener('click', ()=> setMode('simple'));
+      btnLegal.addEventListener('click', ()=> setMode('legal'));
+
+      // 初期モードを復元（デフォルトは簡潔）
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if(saved === 'legal') setMode('legal'); else setMode('simple');
+      } catch(e){
+        setMode('simple');
+      }
+
+      // キーボード操作のための簡易フォーカス切替
+      btnSimple.addEventListener('keydown', (e)=> { if(e.key === 'ArrowRight') btnLegal.focus(); });
+      btnLegal.addEventListener('keydown', (e)=> { if(e.key === 'ArrowLeft') btnSimple.focus(); });
+
+    })();
+  </script>
+</body>
+</html>

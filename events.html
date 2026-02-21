@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>α鯖 イベント</title>
+  <link rel="stylesheet" href="css/events.css">
+  <link rel="icon" href="img/favicon.png" type="image/png">
+</head>
+<body>
+    <header class="site-banner" role="banner" style="width:100%;background:linear-gradient(90deg,#0f172a,#0b1220);color:#fff;position:sticky;top:0;z-index:1000;box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+    <a href="#main-content" class="skip-link" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">コンテンツへスキップ</a>
+
+    <div class="banner-inner" style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;gap:12px;box-sizing:border-box;">
+        <!-- 左グループ -->
+        <div class="left-group" style="display:flex;gap:8px;align-items:center;">
+        <a href="https://discord.gg/m3tSJ3QCVP" target="_blank" rel="noopener noreferrer" aria-label="Discord" style="display:inline-flex;align-items:center;gap:8px;color:#e6eef8;text-decoration:none;padding:6px 10px;border-radius:6px;font-weight:600;font-size:14px;">
+            <!-- 必要ならここにSVG -->
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="display:block;fill:currentColor;"><!-- ... --></svg>
+            <span>Discord</span>
+        </a>
+
+
+        </div>
+
+        <!-- 中央ブランド -->
+        <div class="brand" style="display:flex;align-items:center;gap:8px;margin:auto;">
+        <img src="./img/server-icon.png" alt="α鯖アイコン" class="brand-icon" style="width:36px;height:36px;">
+        <span class="brand-text" style="font-size:18px;font-weight:800;color:#fff;">α鯖</span>
+        </div>
+
+        <!-- 右グループ（ナビ） -->
+        <nav class="right-group" role="navigation" aria-label="サイトナビゲーション" style="display:flex;align-items:center;gap:12px;">
+        <button class="hamburger" aria-expanded="false" aria-controls="nav-list" aria-label="メニュー" style="display:none;background:none;border:0;padding:6px;cursor:pointer;">
+            <span style="display:block;width:20px;height:2px;background:#fff;margin:4px 0;border-radius:2px;"></span>
+            <span style="display:block;width:20px;height:2px;background:#fff;margin:4px 0;border-radius:2px;"></span>
+            <span style="display:block;width:20px;height:2px;background:#fff;margin:4px 0;border-radius:2px;"></span>
+        </button>
+
+        <ul id="nav-list" class="nav-list" aria-hidden="true" style="display:flex;gap:10px;list-style:none;margin:0;padding:0;align-items:center;">
+            <li><a href="./index.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">トップ</a></li>
+            <li><a href="./events.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">イベント</a></li>
+            <li><a href="./gallery.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">ギャラリー</a></li>
+            <li><a href="./plugins.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">プラグイン</a></li>
+            <li><a href="./rules.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">ルール</a></li>
+            <li><a href="./worlds.html" class="nav-link" style="color:#dbeafe;text-decoration:none;padding:8px 10px;border-radius:6px;font-weight:600;">ワールド</a></li>
+            <li><a href="./donate.html" class="nav-link donate" style="background:linear-gradient(90deg,#ff7a18,#ff3d00);color:#fff;padding:8px 12px;border-radius:8px;font-weight:700;text-decoration:none;box-shadow:0 2px 8px rgba(255,61,0,0.2);">寄付</a></li>
+        </ul>
+        </nav>
+    </div>
+    </header>
+  <div class="site-bg" aria-hidden="true"></div>
+
+  <!-- HERO: 直近イベントサムネ -->
+  <header class="events-hero" id="events-hero" aria-hidden="true">
+    <div class="hero-img" id="hero-img"></div>
+    <div class="hero-inner">
+      <h1>イベント</h1>
+      <p id="hero-sub">直近のイベント情報</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- 年月ボタン -->
+    <nav class="events-toc" id="events-toc" aria-label="イベント目次">
+      <div id="toc-years"></div>
+      <div class="toc-actions">
+        <button id="show-past" class="btn ghost">過去のイベントを表示</button>
+        <a href="index.html" class="btn">トップへ戻る</a>
+      </div>
+    </nav>
+
+    <!-- 直近（開催中・これから） -->
+    <section id="upcoming-section" class="events-section">
+      <h2>直近のイベント</h2>
+      <div id="upcoming-list" class="events-list"></div>
+    </section>
+
+    <!-- 終了済み -->
+    <section id="past-section" class="events-section" aria-hidden="true">
+      <h2>終了したイベント</h2>
+      <div id="past-list" class="events-list"></div>
+    </section>
+  </main>
+
+  <!-- イベント詳細モーダル -->
+  <div id="event-modal" class="event-modal" aria-hidden="true" role="dialog" aria-label="イベント詳細">
+    <div class="modal-overlay" id="modal-overlay"></div>
+    <div class="modal-box">
+      <button id="modal-close" class="modal-close" aria-label="閉じる">&times;</button>
+      <img id="modal-thumb" src="" alt="">
+      <div class="modal-body">
+        <h3 id="modal-title"></h3>
+        <div id="modal-dates" class="modal-dates"></div>
+        <p id="modal-desc"></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/events.js"></script>
+</body>
+</html>

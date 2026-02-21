@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>イベント管理 - α鯖</title>
+  <link rel="stylesheet" href="../css/events.css">
+  <link rel="icon" href="../img/favicon.png" type="image/png">
+</head>
+<body>
+  <main class="admin-container">
+    <h1>イベント管理</h1>
+    <p class="admin-sub">イベントの追加・編集・削除を行います（localStorage）</p>
+
+    <section class="admin-panel">
+      <label>サムネイル画像（複数可）</label>
+      <input type="file" id="evt-files" accept="image/*" multiple>
+
+      <label>タイトル</label>
+      <input type="text" id="evt-title" placeholder="イベントタイトル">
+
+      <label>開始日</label>
+      <input type="date" id="evt-start">
+
+      <label>終了日（任意）</label>
+      <input type="date" id="evt-end">
+
+      <label>説明</label>
+      <textarea id="evt-desc" rows="3" placeholder="イベントの説明"></textarea>
+
+      <div class="admin-actions">
+        <button id="evt-add" class="btn">イベントを追加</button>
+        <button id="evt-clear" class="btn ghost">ローカル初期化</button>
+      </div>
+    </section>
+
+    <section class="admin-list">
+      <h2>登録済みイベント</h2>
+      <div id="admin-events" class="admin-events"></div>
+    </section>
+
+    <a href="../events.html" class="btn">イベントページを確認</a>
+  </main>
+
+  <!-- 簡易プレビューモーダル（管理用） -->
+  <div id="admin-preview" class="preview-modal" aria-hidden="true">
+    <div class="preview-overlay" id="admin-preview-overlay"></div>
+    <div class="preview-box">
+      <button id="admin-preview-close" class="preview-close">&times;</button>
+      <img id="admin-preview-img" src="" alt="">
+      <div id="admin-preview-meta" class="preview-meta"></div>
+      <div class="preview-actions">
+        <button id="admin-preview-delete" class="btn">削除</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/events-admin.js"></script>
+</body>
+</html>
