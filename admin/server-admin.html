@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>サーバー設定管理 - α鯖</title>
+  <style>
+    :root{--accent:#2b8a3e;--muted:#6b7280;--bg:#f6f8fa;--card:#fff;--maxw:1100px}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto;background:var(--bg);color:#111}
+    header{background:linear-gradient(180deg,#0b1220,#0f172a);color:#fff;padding:18px;text-align:center}
+    main{max-width:var(--maxw);margin:18px auto;padding:18px}
+    .panel{background:var(--card);padding:14px;border-radius:10px;border:1px solid #e6eef6;margin-bottom:14px}
+    label{display:block;font-weight:700;margin-top:10px}
+    input[type="text"], input[type="url"], input[type="number"], textarea, select{width:100%;padding:8px;border-radius:8px;border:1px solid #e6eef6;margin-top:6px}
+    textarea{min-height:100px}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:12px}
+    .row{display:flex;gap:8px}
+    .btn{padding:8px 12px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer}
+    .btn.ghost{background:transparent;color:var(--accent);border:1px solid #e6eef6}
+    .btn.warn{background:#d9534f}
+    .small{font-size:0.9rem;color:var(--muted);margin-top:8px}
+    .copy-btn{padding:6px 8px;border-radius:6px;border:1px solid rgba(0,0,0,0.06);background:#fff;cursor:pointer}
+    .status-badge{display:inline-block;padding:6px 10px;border-radius:999px;color:#fff;font-weight:700}
+    .status-online{background:#16a34a}
+    .status-maint{background:#f59e0b}
+    .status-off{background:#ef4444}
+    .meta{color:var(--muted);font-size:0.9rem}
+    .note{font-size:0.9rem;color:var(--muted);margin-top:8px}
+    .preview{border-radius:8px;overflow:hidden;border:1px solid #eef2f6;padding:8px;background:#fff}
+    @media (max-width:980px){ .grid{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>サーバー情報 管理</h1>
+    <p style="margin:6px 0 0;opacity:0.9">Java / 統合（Bedrock）それぞれの接続情報（IP・ポート）やリソース、バージョン、Discord等を編集します。</p>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>基本設定</h2>
+      <div class="grid">
+        <div>
+          <label for="srv-name">サーバー表示名</label>
+          <input id="srv-name" type="text" placeholder="例：αサーバー">
+
+          <label for="srv-status">稼働状況</label>
+          <select id="srv-status">
+            <option value="online">オンライン</option>
+            <option value="maintenance">メンテナンス中</option>
+            <option value="offline">オフライン</option>
+          </select>
+
+          <label for="srv-location">サーバー所在地（目安）</label>
+          <input id="srv-location" type="text" placeholder="例：JP - Tokyo">
+
+          <label for="srv-maxplayers">同時接続上限（最大プレイヤー数）</label>
+          <input id="srv-maxplayers" type="number" min="0" placeholder="例：100">
+
+          <label for="srv-whitelist">ホワイトリスト</label>
+          <select id="srv-whitelist">
+            <option value="false">無効</option>
+            <option value="true">有効</option>
+          </select>
+
+          <label for="srv-notes">接続補足（SRVやプロキシ等、改行可）</label>
+          <textarea id="srv-notes" placeholder="接続時の注意点や補足を記載"></textarea>
+        </div>
+
+        <aside>
+          <label for="srv-discord">公式 Discord 招待URL</label>
+          <input id="srv-discord" type="url" placeholder="https://discord.gg/xxxxx">
+
+          <label for="srv-website">公式サイト / サポートURL</label>
+          <input id="srv-website" type="url" placeholder="https://">
+
+          <label for="srv-contact">管理者連絡先（任意）</label>
+          <input id="srv-contact" type="text" placeholder="例：admin@example.jp">
+
+          <label for="srv-banner">ヘッダー画像（任意）</label>
+          <input id="srv-banner" type="file" accept="image/*">
+          <div id="srv-banner-preview" class="preview" style="margin-top:8px"></div>
+
+          <div class="small">保存先: <code>alpha_server_v1</code></div>
+        </aside>
+      </div>
+
+      <div style="margin-top:12px" class="row">
+        <button id="save-basic" class="btn">保存</button>
+        <button id="reset-basic" class="btn ghost">リセット</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>接続情報（Java / 統合）</h2>
+      <div class="grid">
+        <div>
+          <label>Java版（Java Edition）</label>
+          <label for="java-ip">IP / ドメイン</label>
+          <input id="java-ip" type="text" placeholder="例：play.example.jp">
+          <label for="java-port">ポート（省略可）</label>
+          <input id="java-port" type="text" placeholder="例：25565">
+          <div style="margin-top:6px" class="row">
+            <button class="copy-btn" data-copy-target="java-ip">IP をコピー</button>
+            <button class="copy-btn" data-copy-target="java-port">ポートをコピー</button>
+            <button id="gen-java-srv" class="btn ghost" type="button">SRV 設定メモを生成</button>
+          </div>
+
+          <label style="margin-top:12px">Minecraft サーバーバージョン</label>
+          <input id="mc-version" type="text" placeholder="例：1.20.4">
+
+          <label for="mc-compatible">対応クライアント（範囲）</label>
+          <input id="mc-compatible" type="text" placeholder="例：1.20.x / 1.19-1.20">
+
+          <label style="margin-top:12px">クライアント（推奨）</label>
+          <input id="mc-client" type="text" placeholder="例：Java 1.20.4 推奨">
+        </div>
+
+        <aside>
+          <label>統合版（Bedrock / 統合）</label>
+          <label for="bedrock-ip">IP / ドメイン</label>
+          <input id="bedrock-ip" type="text" placeholder="例：bedrock.example.jp">
+          <label for="bedrock-port">ポート（省略可）</label>
+          <input id="bedrock-port" type="text" placeholder="例：19132">
+          <div style="margin-top:6px" class="row">
+            <button class="copy-btn" data-copy-target="bedrock-ip">IP をコピー</button>
+            <button class="copy-btn" data-copy-target="bedrock-port">ポートをコピー</button>
+          </div>
+
+          <label style="margin-top:12px">接続方法補足</label>
+          <textarea id="bedrock-notes" placeholder="統合版の接続補足（例：ポート指定、NAT注意）"></textarea>
+        </aside>
+      </div>
+
+      <div style="margin-top:12px" class="row">
+        <button id="save-connect" class="btn">接続情報を保存</button>
+        <button id="reset-connect" class="btn ghost">リセット</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>リソース / ハードウェア情報</h2>
+      <div class="grid">
+        <div>
+          <label for="srv-maxmem">最大メモリ（例：8GB）</label>
+          <input id="srv-maxmem" type="text" placeholder="例：8GB">
+
+          <label for="srv-cpu">CPU（型番・簡潔に）</label>
+          <input id="srv-cpu" type="text" placeholder="例：Intel Xeon E-2276G">
+
+          <label for="srv-cores">コア / スレッド</label>
+          <input id="srv-cores" type="text" placeholder="例：8コア / 16スレッド">
+
+          <label for="srv-storage">ディスク（容量・種類）</label>
+          <input id="srv-storage" type="text" placeholder="例：NVMe 500GB">
+
+          <label for="srv-network">ネットワーク帯域（目安）</label>
+          <input id="srv-network" type="text" placeholder="例：1Gbps / 帯域保証なし">
+        </div>
+
+        <aside>
+          <label for="srv-maint-next">次回メンテ予定（任意）</label>
+          <input id="srv-maint-next" type="text" placeholder="例：2026-01-15 10:00 JST">
+
+          <label for="srv-maint-note">メンテ備考</label>
+          <textarea id="srv-maint-note" placeholder="メンテの詳細や影響範囲"></textarea>
+
+          <label for="srv-status-note">運用メモ（公開/非公開）</label>
+          <textarea id="srv-status-note" placeholder="運営向けメモ（公開する場合は注意）"></textarea>
+        </aside>
+      </div>
+
+      <div style="margin-top:12px" class="row">
+        <button id="save-resource" class="btn">リソース情報を保存</button>
+        <button id="reset-resource" class="btn ghost">リセット</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>エクスポート / インポート</h2>
+      <div class="row">
+        <button id="export-server" class="btn ghost">サーバー設定をエクスポート</button>
+        <button id="import-server-btn" class="btn ghost">インポート</button>
+        <input id="import-server-file" type="file" accept="application/json" style="display:none">
+        <button id="clear-server" class="btn warn">全て初期化</button>
+      </div>
+      <div class="note">エクスポートは JSON ファイルを生成します。インポートは同形式の JSON を読み込みます。</div>
+    </section>
+  </main>
+
+  <script>
+    (function(){
+      const KEY = 'alpha_server_v1';
+
+      // DOM refs
+      const fields = {
+        name: document.getElementById('srv-name'),
+        status: document.getElementById('srv-status'),
+        location: document.getElementById('srv-location'),
+        maxplayers: document.getElementById('srv-maxplayers'),
+        whitelist: document.getElementById('srv-whitelist'),
+        notes: document.getElementById('srv-notes'),
+        discord: document.getElementById('srv-discord'),
+        website: document.getElementById('srv-website'),
+        contact: document.getElementById('srv-contact'),
+        bannerFile: document.getElementById('srv-banner'),
+        bannerPreview: document.getElementById('srv-banner-preview'),
+
+        javaIp: document.getElementById('java-ip'),
+        javaPort: document.getElementById('java-port'),
+        mcVersion: document.getElementById('mc-version'),
+        mcCompatible: document.getElementById('mc-compatible'),
+        mcClient: document.getElementById('mc-client'),
+
+        bedrockIp: document.getElementById('bedrock-ip'),
+        bedrockPort: document.getElementById('bedrock-port'),
+        bedrockNotes: document.getElementById('bedrock-notes'),
+
+        maxmem: document.getElementById('srv-maxmem'),
+        cpu: document.getElementById('srv-cpu'),
+        cores: document.getElementById('srv-cores'),
+        storage: document.getElementById('srv-storage'),
+        network: document.getElementById('srv-network'),
+        maintNext: document.getElementById('srv-maint-next'),
+        maintNote: document.getElementById('srv-maint-note'),
+        statusNote: document.getElementById('srv-status-note')
+      };
+
+      const saveBasicBtn = document.getElementById('save-basic');
+      const resetBasicBtn = document.getElementById('reset-basic');
+      const saveConnectBtn = document.getElementById('save-connect');
+      const resetConnectBtn = document.getElementById('reset-connect');
+      const saveResourceBtn = document.getElementById('save-resource');
+      const resetResourceBtn = document.getElementById('reset-resource');
+
+      const exportBtn = document.getElementById('export-server');
+      const importBtn = document.getElementById('import-server-btn');
+      const importFile = document.getElementById('import-server-file');
+      const clearAllBtn = document.getElementById('clear-server');
+
+      // copy buttons
+      document.querySelectorAll('.copy-btn').forEach(b=>{
+        b.addEventListener('click', ()=>{
+          const target = b.getAttribute('data-copy-target');
+          const el = document.getElementById(target);
+          if(!el) return;
+          navigator.clipboard?.writeText(el.value || '').then(()=> {
+            const orig = b.textContent;
+            b.textContent = 'コピーしました';
+            setTimeout(()=> b.textContent = orig, 1200);
+          }).catch(()=> alert('コピーに失敗しました'));
+        });
+      });
+
+      // SRV helper
+      document.getElementById('gen-java-srv').addEventListener('click', ()=>{
+        const ip = fields.javaIp.value.trim();
+        const port = fields.javaPort.value.trim() || '25565';
+        if(!ip){ alert('Java IP を入力してください'); return; }
+        const msg = `SRV レコード例:\n_service._tcp.example.com -> target: ${ip}, port: ${port}\n（DNS 管理者に依頼してください）`;
+        alert(msg);
+      });
+
+      // banner upload
+      fields.bannerFile.addEventListener('change', async (e)=>{
+        const f = e.target.files && e.target.files[0];
+        if(!f) return;
+        try{
+          fields.bannerPreview.textContent = '処理中…';
+          const dataUrl = await imageFileToCompressedDataURL(f, 1600, 0.8);
+          fields.bannerPreview.innerHTML = `<img src="${dataUrl}" alt="banner" style="width:100%;border-radius:8px">`;
+          fields._bannerData = dataUrl;
+        }catch(err){
+          console.error(err);
+          alert('画像処理に失敗しました');
+          fields.bannerPreview.textContent = '';
+          fields._bannerData = '';
+        } finally {
+          fields.bannerFile.value = '';
+        }
+      });
+
+      // image helper
+      function imageFileToCompressedDataURL(file, maxWidth = 1400, quality = 0.8){
+        return new Promise((resolve,reject)=>{
+          const reader = new FileReader();
+          const img = new Image();
+          reader.onload = ()=> {
+            img.onload = ()=>{
+              try{
+                const ratio = img.width / img.height || 1;
+                let targetW = img.width;
+                if(img.width > maxWidth) targetW = maxWidth;
+                const targetH = Math.round(targetW / ratio);
+                const canvas = document.createElement('canvas');
+                canvas.width = targetW; canvas.height = targetH;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+                ctx.drawImage(img,0,0,canvas.width,canvas.height);
+                const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                resolve(dataUrl);
+              }catch(err){ reject(err); }
+            };
+            img.onerror = ()=> reject(new Error('画像読み込み失敗'));
+            img.src = reader.result;
+          };
+          reader.onerror = ()=> reject(new Error('ファイル読み込み失敗'));
+          reader.readAsDataURL(file);
+        });
+      }
+
+      // load/save
+      function load(){
+        try{
+          const raw = localStorage.getItem(KEY);
+          return raw ? JSON.parse(raw) : {};
+        }catch(e){ return {}; }
+      }
+      function save(obj){
+        localStorage.setItem(KEY, JSON.stringify(obj));
+        try{ window.dispatchEvent(new StorageEvent('storage', { key: KEY })); }catch(e){}
+      }
+
+      function populate(){
+        const s = load();
+        fields.name.value = s.name || '';
+        fields.status.value = s.status || 'online';
+        fields.location.value = s.location || '';
+        fields.maxplayers.value = s.maxPlayers || '';
+        fields.whitelist.value = s.whitelist ? 'true' : 'false';
+        fields.notes.value = s.notes || '';
+        fields.discord.value = s.discord || '';
+        fields.website.value = s.website || '';
+        fields.contact.value = s.contact || '';
+        if(s.banner) fields.bannerPreview.innerHTML = `<img src="${s.banner}" alt="banner" style="width:100%;border-radius:8px">`;
+        fields._bannerData = s.banner || '';
+
+        fields.javaIp.value = (s.java && s.java.ip) || '';
+        fields.javaPort.value = (s.java && s.java.port) || '';
+        fields.mcVersion.value = s.minecraftVersion || '';
+        fields.mcCompatible.value = s.compatibleClients || '';
+        fields.mcClient.value = s.client || '';
+
+        fields.bedrockIp.value = (s.bedrock && s.bedrock.ip) || '';
+        fields.bedrockPort.value = (s.bedrock && s.bedrock.port) || '';
+        fields.bedrockNotes.value = (s.bedrock && s.bedrock.notes) || '';
+
+        fields.maxmem.value = s.maxMemory || '';
+        fields.cpu.value = s.cpu || '';
+        fields.cores.value = s.cores || '';
+        fields.storage.value = s.storage || '';
+        fields.network.value = s.network || '';
+        fields.maintNext.value = (s.maintenance && s.maintenance.next) || '';
+        fields.maintNote.value = (s.maintenance && s.maintenance.note) || '';
+        fields.statusNote.value = s.statusNote || '';
+      }
+
+      // save handlers
+      saveBasicBtn.addEventListener('click', ()=>{
+        const s = load();
+        s.name = fields.name.value.trim();
+        s.status = fields.status.value;
+        s.location = fields.location.value.trim();
+        s.maxPlayers = fields.maxplayers.value ? Number(fields.maxplayers.value) : '';
+        s.whitelist = fields.whitelist.value === 'true';
+        s.notes = fields.notes.value.trim();
+        s.discord = fields.discord.value.trim();
+        s.website = fields.website.value.trim();
+        s.contact = fields.contact.value.trim();
+        s.banner = fields._bannerData || s.banner || '';
+        s.updatedAt = Date.now();
+        save(s);
+        populate();
+        alert('基本設定を保存しました');
+      });
+
+      saveConnectBtn.addEventListener('click', ()=>{
+        const s = load();
+        s.java = s.java || {};
+        s.java.ip = fields.javaIp.value.trim();
+        s.java.port = fields.javaPort.value.trim();
+        s.minecraftVersion = fields.mcVersion.value.trim();
+        s.compatibleClients = fields.mcCompatible.value.trim();
+        s.client = fields.mcClient.value.trim();
+        s.bedrock = s.bedrock || {};
+        s.bedrock.ip = fields.bedrockIp.value.trim();
+        s.bedrock.port = fields.bedrockPort.value.trim();
+        s.bedrock.notes = fields.bedrockNotes.value.trim();
+        s.updatedAt = Date.now();
+        save(s);
+        populate();
+        alert('接続情報を保存しました');
+      });
+
+      saveResourceBtn.addEventListener('click', ()=>{
+        const s = load();
+        s.maxMemory = fields.maxmem.value.trim();
+        s.cpu = fields.cpu.value.trim();
+        s.cores = fields.cores.value.trim();
+        s.storage = fields.storage.value.trim();
+        s.network = fields.network.value.trim();
+        s.maintenance = s.maintenance || {};
+        s.maintenance.next = fields.maintNext.value.trim();
+        s.maintenance.note = fields.maintNote.value.trim();
+        s.statusNote = fields.statusNote.value.trim();
+        s.updatedAt = Date.now();
+        save(s);
+        populate();
+        alert('リソース情報を保存しました');
+      });
+
+      // reset handlers
+      resetBasicBtn.addEventListener('click', ()=> { if(confirm('基本設定をリセットしますか？')){ const s = load(); s.name=''; s.status='online'; s.location=''; s.maxPlayers=''; s.whitelist=false; s.notes=''; s.discord=''; s.website=''; s.contact=''; s.banner=''; save(s); populate(); }});
+      resetConnectBtn.addEventListener('click', ()=> { if(confirm('接続情報をリセットしますか？')){ const s = load(); s.java={}; s.bedrock={}; s.minecraftVersion=''; s.compatibleClients=''; s.client=''; save(s); populate(); }});
+      resetResourceBtn.addEventListener('click', ()=> { if(confirm('リソース情報をリセットしますか？')){ const s = load(); s.maxMemory=''; s.cpu=''; s.cores=''; s.storage=''; s.network=''; s.maintenance={}; s.statusNote=''; save(s); populate(); }});
+
+      // export/import
+      exportBtn.addEventListener('click', ()=>{
+        const data = JSON.stringify(load(), null, 2);
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'alpha_server_export.json';
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      });
+
+      importBtn.addEventListener('click', ()=> importFile.click());
+      importFile.addEventListener('change', (e)=>{
+        const f = e.target.files && e.target.files[0];
+        if(!f) return;
+        const reader = new FileReader();
+        reader.onload = ()=> {
+          try{
+            const parsed = JSON.parse(reader.result);
+            if(typeof parsed !== 'object') throw new Error('不正な形式');
+            save(parsed);
+            populate();
+            alert('インポート完了');
+          }catch(err){ alert('インポートに失敗しました：' + err.message); }
+        };
+        reader.readAsText(f);
+      });
+
+      clearAllBtn.addEventListener('click', ()=>{
+        if(!confirm('全てのサーバー設定を初期化しますか？ この操作は取り消せません。')) return;
+        localStorage.removeItem(KEY);
+        populate();
+        alert('初期化しました');
+      });
+
+      // init
+      populate();
+
+      // storage sync
+      window.addEventListener('storage', (e)=>{
+        if(e.key === KEY) populate();
+      });
+
+    })();
+  </script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 /* events.js
- - localStorage の alpha_events_v1 を読み込み、イベントページを構築
+ - GitHubストレージ の alpha_events_v1 を読み込み、イベントページを構築
  - イベントオブジェクト: { id, title, desc, start, end, thumb (dataURL or url) }
  - 表示順: 開催中/これから（降順 start）→ 終了済み（降順 end）
 */
@@ -22,16 +22,18 @@
   const modalDates = document.getElementById('modal-dates');
   const modalDesc = document.getElementById('modal-desc');
 
-  function loadEvents(){
+  async function loadEvents(){
     try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(!raw) return [];
-      return JSON.parse(raw);
+      const data = await githubStorageAPI.getJSON(STORAGE_KEY);
+      return data || [];
     }catch(e){ return []; }
   }
 
-  function saveEvents(arr){
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+  async function saveEvents(arr){
+    const result = await githubStorageAPI.setJSON(STORAGE_KEY, arr);
+    if (!result) {
+      console.error('GitHubストレージへの保存に失敗しました');
+    }
   }
 
   function isPast(event){
@@ -54,8 +56,8 @@
     return false;
   }
 
-  function buildLists(){
-    const all = loadEvents();
+  async function buildLists(){
+    const all = await loadEvents();
     // sort by start desc for upcoming, end desc for past
     const upcoming = all.filter(e => !isPast(e)).sort((a,b)=> new Date(a.start) - new Date(b.start));
     const past = all.filter(e => isPast(e)).sort((a,b)=> new Date(b.end || b.start) - new Date(a.end || a.start));
@@ -201,8 +203,8 @@
   buildLists();
 
   // listen to storage changes (admin updates)
-  window.addEventListener('storage', (e)=>{
-    if(e.key === STORAGE_KEY) buildLists();
+  window.addEventListener('storage', async (e)=>{
+    if(e.key === STORAGE_KEY) await buildLists();
   });
 
 })();

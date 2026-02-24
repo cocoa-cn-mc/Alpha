@@ -2,6 +2,7 @@
  - 管理画面スクリプト（イベントの追加・削除・一覧）
  - イベントオブジェクト: { id, title, desc, start, end, thumb }
  - 画像は圧縮して dataURL に保存
+ - 保存先：GitHubストレージ
 */
 
 (function(){
@@ -26,16 +27,17 @@
   const adminPreviewDelete = document.getElementById('admin-preview-delete');
 
   // util load/save
-  function loadEvents(){
+  async function loadEvents(){
     try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(!raw) return [];
-      return JSON.parse(raw);
+      const data = await githubStorageAPI.getJSON(STORAGE_KEY);
+      return data || [];
     }catch(e){ return []; }
   }
-  function saveEvents(arr){
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-    try{ window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY })); }catch(e){}
+  async function saveEvents(arr){
+    const result = await githubStorageAPI.setJSON(STORAGE_KEY, arr);
+    if (!result) {
+      console.error('GitHubストレージへの保存に失敗しました');
+    }
   }
 
   // image compression (reuse)
@@ -75,8 +77,8 @@
   }
 
   // render admin list
-  function renderAdminList(){
-    const events = loadEvents().slice().reverse();
+  async function renderAdminList(){
+    const events = (await loadEvents()).slice().reverse();
     adminEvents.innerHTML = '';
     if(events.length === 0){
       adminEvents.textContent = 'イベントはまだ登録されていません。';
@@ -107,14 +109,14 @@
       const delBtn = document.createElement('button');
       delBtn.className = 'btn';
       delBtn.textContent = '削除';
-      delBtn.addEventListener('click', ()=>{
+      delBtn.addEventListener('click', async ()=>{
         if(!confirm('このイベントを削除しますか？')) return;
-        const all = loadEvents();
+        const all = await loadEvents();
         const realIdx = all.findIndex(x => x.id === ev.id);
         if(realIdx !== -1){
           all.splice(realIdx,1);
-          saveEvents(all);
-          renderAdminList();
+          await saveEvents(all);
+          await renderAdminList();
           alert('削除しました');
         }
       });
@@ -140,16 +142,16 @@
   adminPreviewOverlay.addEventListener('click', closeAdminPreview);
   adminPreviewClose.addEventListener('click', closeAdminPreview);
 
-  adminPreviewDelete.addEventListener('click', ()=>{
+  adminPreviewDelete.addEventListener('click', async ()=>{
     const metaText = adminPreviewMeta.textContent || '';
     const title = metaText.split('—')[0]?.trim();
     if(!confirm('プレビュー中のイベントを削除しますか？')) return;
-    let all = loadEvents();
+    let all = await loadEvents();
     const idx = all.findIndex(it => it.title === title);
     if(idx !== -1){
       all.splice(idx,1);
-      saveEvents(all);
-      renderAdminList();
+      await saveEvents(all);
+      await renderAdminList();
       closeAdminPreview();
       alert('削除しました');
     }
@@ -167,7 +169,7 @@
     if(!start){ alert('開始日を入力してください'); return; }
     if(files.length === 0){ alert('サムネイル画像を1枚以上選択してください'); return; }
 
-    const all = loadEvents();
+    const all = await loadEvents();
 
     // compress first file as main thumb; if multiple files, ignore extras for now (could be gallery)
     try{
@@ -175,15 +177,15 @@
       const id = 'evt-' + Date.now();
       const ev = { id, title, desc, start, end: end || null, thumb: compressed };
       all.push(ev);
-      saveEvents(all);
+      await saveEvents(all);
       // reset form
       filesInput.value = '';
       titleInput.value = '';
       startInput.value = '';
       endInput.value = '';
       descInput.value = '';
-      renderAdminList();
-      alert('イベントを追加しました（ローカル保存）');
+      await renderAdminList();
+      alert('イベントを追加しました（GitHubストレージ保存）');
     }catch(e){
       console.error(e);
       alert('画像処理に失敗しました');
@@ -191,10 +193,10 @@
   });
 
   // clear all
-  clearBtn.addEventListener('click', ()=>{
-    if(!confirm('ローカルに保存されたイベントをすべて削除しますか？')) return;
-    localStorage.removeItem(STORAGE_KEY);
-    renderAdminList();
+  clearBtn.addEventListener('click', async ()=>{
+    if(!confirm('GitHubストレージに保存されたイベントをすべて削除しますか？')) return;
+    await githubStorageAPI.removeItem(STORAGE_KEY);
+    await renderAdminList();
     alert('初期化しました');
   });
 
@@ -202,8 +204,8 @@
   renderAdminList();
 
   // storage sync
-  window.addEventListener('storage', (e)=>{
-    if(e.key === STORAGE_KEY) renderAdminList();
+  window.addEventListener('storage', async (e)=>{
+    if(e.key === STORAGE_KEY) await renderAdminList();
   });
 
 })();

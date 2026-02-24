@@ -5,7 +5,7 @@
    ・グリッド/リスト表示切替、サムネサイズ調整
    ・一括選択/反転/削除、個別削除（プレビューから）
    ・ページネーション（読み込み）で大量画像に対応
- - 保存：localStorage (キー: alpha_gallery_items_v1)
+ - 保存：GitHubストレージ (キー: alpha_gallery_items_v1)
 */
 
 (function(){
@@ -53,17 +53,17 @@
   let currentPreviewIndex = -1;
 
   /* ---------- util: load/save ---------- */
-  function loadSaved(){
+  async function loadSaved(){
     try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(!raw) return [];
-      return JSON.parse(raw);
+      const data = await githubStorageAPI.getJSON(STORAGE_KEY);
+      return data || [];
     }catch(e){ return []; }
   }
-  function saveSaved(arr){
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-    // notify other tabs (some browsers ignore custom StorageEvent construction; still attempt)
-    try{ window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY })); }catch(e){}
+  async function saveSaved(arr){
+    const result = await githubStorageAPI.setJSON(STORAGE_KEY, arr);
+    if (!result) {
+      console.error('GitHubストレージへの保存に失敗しました');
+    }
   }
 
   /* ---------- 画像圧縮ユーティリティ ---------- */
@@ -115,8 +115,8 @@
   }
 
   /* ---------- 初期読み込み ---------- */
-  function init(){
-    items = loadSaved();
+  async function init(){
+    items = await loadSaved();
     items = items.map(it => ({ src: it.src, date: it.date || new Date().toISOString().slice(0,10), desc: it.desc || '' }));
     // default sort: new
     items.sort((a,b)=> new Date(b.date) - new Date(a.date));
@@ -371,7 +371,7 @@
     const desc = descInput.value.trim();
     if(files.length === 0){ alert('画像ファイルを選択してください'); return; }
 
-    const arr = loadSaved();
+    const arr = await loadSaved();
     // 圧縮パラメータ（必要ならUIで変更できるようにする）
     const MAX_WIDTH = 1600;   // 最大幅（px）
     const QUALITY = 0.7;      // JPEG品質（0.0〜1.0）
@@ -401,13 +401,13 @@
     alert('画像を追加しました（圧縮してローカル保存）');
   });
 
-  /* ---------- クリア（ローカル初期化） ---------- */
-  clearBtn.addEventListener('click', ()=>{
-    if(!confirm('ローカルに保存されたギャラリー画像をすべて削除しますか？')) return;
-    localStorage.removeItem(STORAGE_KEY);
+  /* ---------- クリア（ストレージ初期化） ---------- */
+  clearBtn.addEventListener('click', async ()=>{
+    if(!confirm('GitHubストレージに保存されたギャラリー画像をすべて削除しますか？')) return;
+    await githubStorageAPI.removeItem(STORAGE_KEY);
     selectedSet.clear();
-    init();
-    alert('ローカルデータを初期化しました');
+    await init();
+    alert('ストレージデータを初期化しました');
   });
 
   /* ---------- ページネーション読み込み ---------- */

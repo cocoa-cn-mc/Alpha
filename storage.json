@@ -1,0 +1,36 @@
+{
+  "project_name": "Alpha-System",
+  "metadata": {
+    "owner": "cocoa-cn-mc",
+    "description": "Configured for GitHub Pages deployment"
+  },
+  "repositories": [
+    {
+      "name": "Alpha",
+      "visibility": "public",
+      "url": "https://github.com/cocoa-cn-mc/Alpha",
+      "pages_url": "https://cocoa-cn-mc.github.io/Alpha/",
+      "access": {
+        "auth_method": "github_actions_secrets",
+        "secret_name": "STORAGE_REPO_KEY"
+      },
+      "contents": {
+        "config": ["storage.json"],
+        "frontend": ["HTML", "CSS", "JavaScript files"],
+        "assets": ["Images and icons"]
+      }
+    },
+    {
+      "name": "alpha-storage",
+      "visibility": "private",
+      "url": "https://github.com/cocoa-cn-mc/alpha-storage",
+      "access": {
+        "auth_method": "deploy_key",
+        "deploy_key_title": "storage-alpha"
+      },
+      "storage_backend": {
+        "provider": "github_repository"
+      }
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 /* gallery.js
- - 管理画面で保存した画像(localStorage)を読み込み、月ごとに表示
+ - 管理画面で保存した画像(GitHubストレージ)を読み込み、月ごとに表示
  - 画像クリックでモーダル拡大表示（前後移動・閉じる・Esc対応）
 */
 
@@ -24,16 +24,15 @@
   let currentItems = []; // 表示中の全アイテム（ソート済）
   let currentIndex = -1;
 
-  function loadSaved(){
+  async function loadSaved(){
     try{
-      const raw = localStorage.getItem(STORAGE_ITEMS);
-      if(!raw) return [];
-      return JSON.parse(raw);
+      const data = await githubStorageAPI.getJSON(STORAGE_ITEMS);
+      return data || [];
     }catch(e){ return []; }
   }
 
-  function getAllItems(){
-    const saved = loadSaved();
+  async function getAllItems(){
+    const saved = await loadSaved();
     saved.sort((a,b)=> new Date(b.date) - new Date(a.date));
     return saved;
   }
@@ -44,7 +43,7 @@
   }
 
   let heroIntervalId = null;
-  function startHeroRotation(srcs){
+  async function startHeroRotation(srcs){
     if(!heroEl) return;
     if(heroIntervalId) clearInterval(heroIntervalId);
     if(!srcs || srcs.length===0){
@@ -88,8 +87,8 @@
     });
   }
 
-  function renderGallery(){
-    const items = getAllItems();
+  async function renderGallery(){
+    const items = await getAllItems();
     currentItems = items.slice(); // 保存
     const { keys, groups } = groupByMonth(items);
     renderTOC(keys);
@@ -152,7 +151,7 @@
     }
 
     const heroSrcs = buildHeroList(items);
-    startHeroRotation(heroSrcs);
+    await startHeroRotation(heroSrcs);
   }
 
   /* ---------- モーダル制御 ---------- */
@@ -238,8 +237,8 @@
   };
 
   // storage イベントで他タブの変更を反映
-  window.addEventListener('storage', (e)=>{
-    if(e.key === STORAGE_ITEMS) renderGallery();
+  window.addEventListener('storage', async (e)=>{
+    if(e.key === STORAGE_ITEMS) await renderGallery();
   });
 
 })();
